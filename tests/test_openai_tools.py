@@ -1,6 +1,7 @@
 import unittest
+from unittest.mock import patch
 
-from src.openai_agent import deterministic_preflight, execute_tool
+from src.openai_agent import answer_with_openai, deterministic_preflight, execute_tool
 
 
 class OpenAIToolTest(unittest.TestCase):
@@ -31,6 +32,21 @@ class OpenAIToolTest(unittest.TestCase):
         })
         self.assertTrue(result["passages"])
         self.assertTrue(result["passages"][0]["url"])
+
+    @patch("src.openai_agent.explain_impact_with_openai")
+    def test_openai_path_only_explains_precomputed_result(self, explain):
+        explain.return_value = {
+            "headline": "O-202 needs review",
+            "summary": "15 units are uncovered before arrival.",
+            "analyst_focus": "Flag O-202 for same-day review.",
+            "limitation": "The delay cause is unknown.",
+        }
+        answer = answer_with_openai("Shipment S-104 is delayed. Explain the impact.")
+        self.assertIn("15 units", answer)
+        self.assertIn("data/orders.csv", answer)
+        self.assertIn("same-day", answer)
+        args = explain.call_args.args
+        self.assertEqual(args[1]["at_risk_orders"][0]["qty_uncovered"], 15)
 
     def test_cause_question_gets_direct_missing_evidence_answer(self):
         answer = deterministic_preflight("Why was shipment S-104 delayed?")

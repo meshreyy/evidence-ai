@@ -8,13 +8,12 @@ Use only the supplied JSON context. Do not infer a delay cause or invent actions
 are exposed, explain that clearly. The company, records, and playbook are synthetic scenario
 data, not real company evidence. Never claim the language model was trained on these records.
 
-Return only a JSON object with these string/list fields:
-- headline: concise, decision-oriented, max 10 words
-- summary: one or two short sentences explaining the result
-- risk_factors: list of at most 3 short, directly supported observations
-- analyst_focus: repeat or summarize only an action present in allowed_next_steps; if there is
+Return only a JSON object with these string fields:
+- headline: concise, decision-oriented, max 8 words
+- summary: one sentence, max 28 words, explaining the result and its timing
+- analyst_focus: max 16 words; repeat only an action present in allowed_next_steps; if there is
   no supported action, say that the records do not establish one
-- limitation: one short evidence limitation from the context
+- limitation: max 12 words, stating the most important evidence limitation
 """
 
 
@@ -56,13 +55,10 @@ def explain_impact_with_openai(shipment, impact, policy_text, model="gpt-4o-mini
     if not content:
         raise ValueError("The model returned an empty explanation.")
     brief = json.loads(content)
-    required = {"headline", "summary", "risk_factors", "analyst_focus", "limitation"}
+    required = {"headline", "summary", "analyst_focus", "limitation"}
     if not required.issubset(brief):
         raise ValueError("The model response is missing required explanation fields.")
-    if not isinstance(brief["risk_factors"], list):
-        raise ValueError("The model returned risk factors in an unexpected format.")
-    for field in required - {"risk_factors"}:
+    for field in required:
         if not isinstance(brief[field], str):
             raise ValueError(f"The model returned an invalid {field} field.")
-    brief["risk_factors"] = [str(item) for item in brief["risk_factors"][:3]]
     return brief

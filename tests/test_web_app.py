@@ -25,7 +25,6 @@ class SupplyChainDashboardTest(unittest.TestCase):
             choices=[SimpleNamespace(message=SimpleNamespace(content=(
                 '{"headline":"O-202 needs review",'
                 '"summary":"O-202 is short 15 units before arrival.",'
-                '"risk_factors":["Due date is before arrival."],'
                 '"analyst_focus":"Flag O-202 for same-day review.",'
                 '"limitation":"The delay cause is not recorded."}'
             )))]
@@ -33,13 +32,12 @@ class SupplyChainDashboardTest(unittest.TestCase):
         with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
             app = AppTest.from_file("src/web_app.py").run(timeout=30)
             app.switch_page("pages/shipment_analysis.py").run(timeout=30)
-            generate = next(button for button in app.button if button.label == "Generate AI explanation")
+            generate = next(button for button in app.button if button.label == "Generate explanation")
             self.assertFalse(generate.disabled)
             generate.click().run(timeout=30)
 
         self.assertFalse(list(app.exception))
         self.assertTrue(any("O-202 needs review" in item.value for item in app.markdown))
-        self.assertTrue(any("Due date is before arrival" in item.value for item in app.markdown))
         self.assertNotIn("tools", client.chat.completions.create.call_args.kwargs)
 
     def test_shipment_page_shows_order_level_evidence_and_next_step(self):
@@ -47,14 +45,16 @@ class SupplyChainDashboardTest(unittest.TestCase):
         app.switch_page("pages/shipment_analysis.py").run(timeout=30)
 
         self.assertFalse(list(app.exception))
-        self.assertEqual([title.value for title in app.title], ["Shipment analysis"])
+        self.assertEqual([title.value for title in app.title], ["Impact analysis"])
         metrics = {metric.label: metric.value for metric in app.metric}
-        self.assertEqual(metrics["Orders exposed"], "1")
-        self.assertEqual(metrics["Expected arrival"], "2026-11-20")
+        self.assertEqual(metrics["Orders at risk"], "1")
+        self.assertEqual(metrics["Available inventory"], "30 units")
+        self.assertTrue(any("15 units uncovered" in item.value for item in app.markdown))
+        self.assertTrue(any("10 covered" in item.value and "15 short" in item.value for item in app.markdown))
         self.assertTrue(any("O-202" in str(item.value) for item in app.dataframe))
         self.assertTrue(any("same-day operations analyst review" in item.value for item in app.markdown))
-        self.assertTrue(any("AI DECISION BRIEF" in item.value for item in app.markdown))
-        self.assertTrue(any("Connect a server-side OpenAI key" in item.value for item in app.warning))
+        self.assertTrue(any("AI EXPLANATION" in item.value for item in app.markdown))
+        self.assertTrue(any("Add a server-side OpenAI key" in item.value for item in app.caption))
 
 
 if __name__ == "__main__":

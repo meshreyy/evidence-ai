@@ -92,6 +92,7 @@ def calculate_at_risk_orders(shipment, inventory_rows, orders):
                 "customer": order.get("customer_name", order.get("customer_id", "")),
                 "item": order.get("item_name", item_id),
                 "qty_needed": needed,
+                "qty_covered": covered,
                 "qty_uncovered": shortfall,
                 "due_date": order["due_date"],
                 "shipment_id": shipment_id,

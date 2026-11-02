@@ -14,7 +14,6 @@ class AIExplainerTest(unittest.TestCase):
         brief_json = {
             "headline": "O-202 needs same-day review",
             "summary": "O-202 is short 15 units before the shipment arrives.",
-            "risk_factors": ["The order is due before the expected arrival."],
             "analyst_focus": "Flag O-202 for same-day analyst review.",
             "limitation": "The demo records do not state why the shipment was delayed.",
         }

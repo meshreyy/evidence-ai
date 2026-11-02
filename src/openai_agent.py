@@ -150,7 +150,6 @@ def answer_with_openai(question, model=MODEL):
     )
 
     lines = [brief["headline"], brief["summary"]]
-    lines.extend(f"- {factor}" for factor in brief["risk_factors"])
     lines.append(f"Analyst focus: {brief['analyst_focus']}")
     lines.append(f"Limitation: {brief['limitation']}")
     sources = ", ".join(impact["data_sources"])

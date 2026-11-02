@@ -1,4 +1,5 @@
-"""Order-level investigation for one selected inbound shipment."""
+"""Focused visual investigation for one selected inbound shipment."""
+from datetime import date
 import os
 
 import pandas as pd
@@ -12,15 +13,14 @@ from src.ui import get_openai_api_key, page_heading
 
 shipments = read_csv("shipments.csv")
 shipment_by_id = {row["shipment_id"]: row for row in shipments}
-orders = read_csv("orders.csv")
 inventory = read_csv("inventory.csv")
 inventory_by_item = {row["item_id"]: int(row["available_qty"]) for row in inventory}
 as_of = shipments[0]["as_of_date"] if shipments else None
 
 page_heading(
-    "INVESTIGATION / SHIPMENT DETAIL",
-    "Shipment analysis",
-    "Trace a delayed inbound item to the customer orders it may leave short.",
+    "SHIPMENT INVESTIGATION",
+    "Impact analysis",
+    "Identify what is short, when it is due, and why the analyst should care.",
     as_of,
 )
 selected_id = st.selectbox(
@@ -30,42 +30,83 @@ selected_id = st.selectbox(
         f"{shipment_id}  ·  {shipment_by_id[shipment_id]['item_id']}  ·  "
         f"{shipment_by_id[shipment_id]['item_name']}"
     ),
-    label_visibility="collapsed",
 )
 shipment = shipment_by_id[selected_id]
 impact = execute_tool("check_shipment_impact", {"shipment_id": selected_id})
 risks = impact["at_risk_orders"]
 units_uncovered = sum(row["qty_uncovered"] for row in risks)
 
-label_col, status_col = st.columns([4, 1])
-with label_col:
-    st.markdown(f"### {shipment['item_name']} <span class='quiet'>/ {shipment['item_id']}</span>", unsafe_allow_html=True)
-with status_col:
-    st.markdown(f"<div class='status-risk'>{shipment['status'].upper()}</div>", unsafe_allow_html=True)
+if risks:
+    first = risks[0]
+    gap_days = (
+        date.fromisoformat(shipment["expected_arrival_date"])
+        - date.fromisoformat(first["due_date"])
+    ).days
+    severity = "HIGH PRIORITY" if units_uncovered > 10 else "ANALYST REVIEW"
+    st.markdown(
+        f"""<div class="impact-hero">
+          <div class="impact-label">{severity} &nbsp;·&nbsp; {first['order_id']} / {first['customer']}</div>
+          <div class="impact-value">{units_uncovered:,} units uncovered</div>
+          <div>Order due {first['due_date']} · shipment arrives {shipment['expected_arrival_date']} · {gap_days} days later</div>
+        </div>""",
+        unsafe_allow_html=True,
+    )
+else:
+    st.success("No at-risk customer orders before this shipment's arrival.")
 
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Expected arrival", shipment["expected_arrival_date"])
-m2.metric("Shipment quantity", f"{int(shipment['qty']):,} units")
-m3.metric("Available inventory", f"{inventory_by_item.get(shipment['item_id'], 0):,} units")
-m4.metric("Orders exposed", len(risks))
+m1, m2, m3 = st.columns(3)
+m1.metric("Orders at risk", len(risks))
+m2.metric("Available inventory", f"{inventory_by_item.get(shipment['item_id'], 0):,} units")
+m3.metric("Shipment quantity", f"{int(shipment['qty']):,} units")
+
+left, right = st.columns([1.25, 1], gap="medium")
+with left, st.container(border=True):
+    st.markdown("### Order impact")
+    if risks:
+        st.caption("Available inventory is allocated by due date, then priority.")
+        focus = risks[0]
+        covered = int(focus.get("qty_covered", focus["qty_needed"] - focus["qty_uncovered"]))
+        needed = int(focus["qty_needed"])
+        covered_width = max(0, min(100, round(covered / needed * 100)))
+        short_width = 100 - covered_width
+        st.markdown(f"**{focus['order_id']}** · {focus['item']} · {needed} units needed")
+        st.markdown(
+            f'<div class="allocation-track"><div class="allocation-covered" style="width:{covered_width}%">'
+            f'{covered} covered</div><div class="allocation-short" style="width:{short_width}%">'
+            f'{focus["qty_uncovered"]} short</div></div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown("**Orders requiring review**")
+        order_rows = [{
+            "Order": row["order_id"],
+            "Customer": row.get("customer", ""),
+            "Needed": row["qty_needed"],
+            "Covered": row.get("qty_covered", row["qty_needed"] - row["qty_uncovered"]),
+            "Short": row["qty_uncovered"],
+            "Due": row["due_date"],
+        } for row in risks]
+        st.dataframe(pd.DataFrame(order_rows), width="stretch", hide_index=True)
+        st.markdown(
+            f'<div class="timeline"><strong>ORDER DUE&nbsp; {focus["due_date"]}</strong>'
+            '<div class="timeline-line"></div>'
+            f'<strong>ARRIVAL&nbsp; {shipment["expected_arrival_date"]}</strong></div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.markdown("**Inventory covers all orders due before arrival.**")
+        st.caption("The current scenario shows no uncovered quantity to escalate.")
 
 api_key = get_openai_api_key()
 policy_results = search_documents("shortage above 10 units same-day analyst review", limit=1)
-policy_text = policy_results[0]["text"] if policy_results else "No policy passage retrieved."
+policy_text = policy_results[0]["text"] if policy_results else "No policy passage was retrieved."
 state_key = f"ai_explanation_{selected_id}"
-
-with st.container(border=True):
-    ai_title, ai_badge = st.columns([5, 1])
-    with ai_title:
-        st.markdown('<div class="eyebrow">AI DECISION BRIEF</div>', unsafe_allow_html=True)
-        st.markdown("### Explain the operational impact")
-        st.caption("AI summarizes the verified calculation and policy. It does not calculate quantities or decide actions.")
-    with ai_badge:
-        st.markdown('<div class="pill">GROUNDED</div>', unsafe_allow_html=True)
-
+with right, st.container(border=True):
+    st.markdown('<div class="eyebrow">AI EXPLANATION</div>', unsafe_allow_html=True)
+    st.markdown("### Why this matters")
+    st.caption("AI translates the verified calculation into a concise analyst brief.")
     if api_key:
-        if st.button("Generate AI explanation", type="primary", key=f"generate_{selected_id}"):
-            with st.spinner("Explaining the verified result…"):
+        if st.button("Generate explanation", type="primary", key=f"generate_{selected_id}"):
+            with st.spinner("Preparing a grounded explanation…"):
                 try:
                     st.session_state[state_key] = explain_impact_with_openai(
                         shipment,
@@ -79,78 +120,40 @@ with st.container(border=True):
         brief = st.session_state.get(state_key)
         if brief:
             if "error" in brief:
-                st.error(f"AI explanation unavailable ({brief['error']}). The verified calculations below are unchanged.")
+                st.error(f"Explanation unavailable ({brief['error']}); verified results remain unchanged.")
             else:
                 st.markdown(f"**{brief['headline']}**")
                 st.write(brief["summary"])
-                insight_col, action_col = st.columns([1.2, 1])
-                with insight_col:
-                    st.markdown("**Why it matters**")
-                    for factor in brief["risk_factors"]:
-                        st.markdown(f"- {factor}")
-                with action_col:
-                    st.markdown("**Analyst focus**")
-                    st.info(brief["analyst_focus"])
-                st.caption(f"Evidence limitation: {brief['limitation']} · Synthetic scenario records")
+                st.info(brief["analyst_focus"])
+                st.caption(f"Limit: {brief['limitation']} · Source: verified order data + synthetic playbook")
+        else:
+            if risks:
+                st.markdown(f"**Verified input:** {first['order_id']} · {units_uncovered} units short · due {first['due_date']}.")
+            else:
+                st.markdown("**Verified input:** no order shortfall before arrival.")
+            st.caption("Generate a brief to explain the timing, shortage, and policy-supported focus.")
     else:
         if risks:
-            focus = risks[0]
-            st.markdown(
-                f"**Verified context:** {focus['order_id']} · {focus['customer']} · "
-                f"{focus['qty_uncovered']} units uncovered · due {focus['due_date']}."
-            )
+            st.markdown(f"**Verified input:** {first['order_id']} · {units_uncovered} units short · due {first['due_date']}.")
         else:
-            st.markdown("**Verified context:** No order shortfall was found before this shipment arrives.")
-        st.warning(
-            "Connect a server-side OpenAI key to generate the AI decision brief. "
-            "The calculation and policy-backed recommendation remain available below."
+            st.markdown("**Verified input:** no order shortfall before arrival.")
+        st.caption("Add a server-side OpenAI key to generate the explanation. No key is stored in the browser or repository.")
+
+if risks:
+    st.markdown("### Recommended analyst action")
+    for action in impact["allowed_next_steps"]:
+        st.markdown(
+            f'<div class="impact-hero"><span class="status-risk">{action["order_id"]}</span>'
+            f' &nbsp; {action["action"]}</div>',
+            unsafe_allow_html=True,
         )
-        st.button("Generate AI explanation", type="primary", disabled=True, key=f"generate_disabled_{selected_id}")
+else:
+    st.caption("No policy escalation is indicated by the available records.")
 
-left, right = st.columns([1.4, 1], gap="large")
-with left, st.container(border=True):
-    st.markdown("### Customer order exposure")
-    if risks:
-        st.caption(f"{units_uncovered:,} units are not covered by available inventory before arrival")
-        rows = [{
-            "Order": row["order_id"],
-            "Customer": row.get("customer", ""),
-            "Segment": row.get("customer_segment", ""),
-            "Qty needed": row["qty_needed"],
-            "Qty uncovered": row["qty_uncovered"],
-            "Due date": row["due_date"],
-        } for row in risks]
-        st.dataframe(pd.DataFrame(rows), width="stretch", hide_index=True)
-        chart = pd.DataFrame({
-            "Units uncovered": [row["qty_uncovered"] for row in risks]
-        }, index=[row["order_id"] for row in risks])
-        st.bar_chart(chart, color="#E8A94B", height=220)
-    else:
-        st.success("Covered · no orders are short before this shipment arrives.")
-        st.caption("Orders due after the arrival date are not counted as exposed to this delay.")
-
-with right, st.container(border=True):
-    st.markdown("### Analyst action")
-    if risks:
-        for action in impact["allowed_next_steps"]:
-            st.markdown(f"**{action['order_id']}**")
-            st.markdown(f"<span class='status-risk'>{action['action']}</span>", unsafe_allow_html=True)
-            st.caption(f"Policy basis: {action['basis'].split(':', 1)[0]}")
-    else:
-        st.markdown("No escalation is indicated by the current inventory and order records.")
-    reason = shipment.get("delay_reason", "").strip()
-    if reason:
-        st.markdown("**Recorded scenario reason**")
-        st.caption(reason)
-    else:
-        st.markdown("**Delay cause**")
-        st.caption("Not recorded in this scenario. Do not infer or invent a cause.")
-
-with st.expander("Evidence & calculation method"):
-    st.markdown("**Runtime store** · SQLite tables: `shipments`, `items`, `inventory`, `orders`, `customers`")
-    st.markdown("**Records used** · `data/supplychain.sqlite3` seeded from the versioned CSV files")
-    st.markdown("**Policy used** · synthetic playbook; shortages above 10 units receive same-day analyst review")
+with st.expander("Sources & calculation"):
+    st.caption("SQLite: shipments · inventory · orders · items · customers")
+    st.caption("Policy: `docs/sources/brighthome_demo_playbook.md` (synthetic scenario policy)")
     if policy_results:
-        st.caption(policy_results[0]["text"])
+        st.write(policy_text)
     st.caption(impact["note"])
-    st.caption("Business records and playbook are synthetic scenario data—not evidence about a real company.")
+    st.caption("All company and operational records shown here are synthetic.")

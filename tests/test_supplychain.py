@@ -19,6 +19,7 @@ class SupplyChainImpactTest(unittest.TestCase):
             "customer": "Demo Account 002",
             "item": "Control module",
             "qty_needed": 25,
+            "qty_covered": 10,
             "customer_segment": "OEM",
             "qty_uncovered": 15,
             "due_date": "2026-11-15",
