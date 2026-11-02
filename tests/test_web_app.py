@@ -3,6 +3,7 @@ import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
 
+import streamlit as st
 from streamlit.testing.v1 import AppTest
 
 
@@ -11,6 +12,7 @@ class SupplyChainDashboardTest(unittest.TestCase):
         app = AppTest.from_file("src/web_app.py").run(timeout=30)
 
         self.assertFalse(list(app.exception))
+        self.assertEqual(st.get_option("theme.base"), "dark")
         self.assertEqual([title.value for title in app.title], ["Inbound supply overview"])
         metrics = {metric.label: metric.value for metric in app.metric}
         self.assertEqual(metrics["Inbound shipments"], "50")

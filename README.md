@@ -37,7 +37,7 @@ Example question: `Shipment S-104 is delayed. Which orders are at risk?`
 - `src/assistant.py`: bounded, read-only tool workflow; currently routes using
   a shipment-ID pattern, not an LLM planner.
 - `src/cli.py`: simple interactive demo.
-- `src/web_app.py` + `src/pages/`: light-themed, two-page Streamlit workspace. Overview has portfolio-level risk metrics, an exposure chart, and shipment register; Shipment analysis drills into order-level evidence and analyst next steps.
+- `src/web_app.py` + `src/pages/`: dark-themed, two-page Streamlit workspace. Overview has portfolio-level risk metrics, an exposure chart, and shipment register; Shipment analysis drills into order-level evidence and analyst next steps.
 - `tests/` and `evals/cases.json`: calculation, validation, retrieval, workflow,
   and deterministic golden-case evaluations. Run `python -m src.evaluate` to
   see tool/retrieval results. Run `python -m src.evaluate_agent` for live answer
