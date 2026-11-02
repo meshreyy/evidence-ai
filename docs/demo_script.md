@@ -14,7 +14,7 @@ Expand Evidence & calculation method. Point out that runtime business facts come
 
 ## 4. Show the agent and limits (30 seconds)
 
-If API credits are available, enable the optional OpenAI explanation. Explain that the model is not fine-tuned on the records: it can retrieve selected SQLite facts through allowlisted read-only tools, with a maximum tool-call budget. It cannot change orders or contact customers.
+If an API key is configured, generate the AI Decision Brief. Explain that Python already calculated the result and selected the policy-supported action; the model receives only that bounded context to explain why it matters. It has no database tools and cannot change quantities, contact customers, or choose new actions.
 
 ## 5. Show evaluation (30 seconds)
 

@@ -7,8 +7,7 @@ clearly labeled synthetic dataset: 50 shipments, 50 SKUs, 50 inventory balances,
 
 ## Run
 
-Requires Python 3.9+ for tests/offline mode. Install the OpenAI SDK to enable
-model-based tool calling:
+Requires Python 3.9+. Install the OpenAI SDK to enable the optional AI decision brief:
 
 ```bash
 python3 -m venv .venv
@@ -24,12 +23,7 @@ python -m src.cli             # terminal interface
 streamlit run src/web_app.py  # visual interface
 ```
 
-Set `OPENAI_API_KEY` in your shell to enable the OpenAI agent. Never paste the
-key into source code, chat, or commit it. For example, in your own terminal run
-`export OPENAI_API_KEY='your-key'` (keep the value private), then launch the CLI.
-Set `OPENAI_MODEL` to override the default `gpt-4o-mini`. Without a key, the CLI
-runs the deterministic offline workflow. Use `SUPPLYCHAIN_OFFLINE=1` to force
-offline mode.
+Set `OPENAI_API_KEY` in the server environment or copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and add your own key. Never paste the key into source code, chat, or commit the real secrets file. The model only receives the selected shipment's deterministic result and relevant policy excerpt; it has no database tools and does not calculate or choose actions. Without a key, the overview and deterministic analysis still work, while the AI panel shows the verified context and explains how to enable model-generated commentary. Set `OPENAI_MODEL` to override `gpt-4o-mini`.
 
 Example question: `Shipment S-104 is delayed. Which orders are at risk?`
 
@@ -49,13 +43,7 @@ Example question: `Shipment S-104 is delayed. Which orders are at risk?`
   see tool/retrieval results. Run `python -m src.evaluate_agent` for live answer
   checks; it calls the model, uses API credits, and saves outputs under `evals/`.
 
-The optional OpenAI path uses function/tool calling with three read-only tools
-(order impact, shipment lookup, and document search), an allowlist, and a four-call budget.
-Deterministic preflight handles unknown shipment IDs and unrecorded delay causes so
-answers to these cases do not depend on the model choosing a tool. Business calculations remain deterministic.
-The local retrieval uses BM25 and a small explicit synonym map; it is still
-lexical search, not embedding-based semantic retrieval. Do not claim
-production-grade or fully semantic RAG. The model-based path requires an API key and network access.
+The AI decision brief is an explanation layer: deterministic Python computes the result, then the model receives only that result and a relevant policy passage to summarize it. The model cannot call tools, query the database, change figures, or execute actions. Unknown shipments and missing delay causes are handled deterministically. The separate document retrieval uses BM25 and a small synonym map; it is lexical search, not embedding-based semantic retrieval. The AI brief requires an API key and network access.
 
 See [`docs/architecture.md`](docs/architecture.md) for the system diagram,
 [`docs/database_guide.md`](docs/database_guide.md) to inspect the SQL database,
@@ -74,4 +62,4 @@ Source-selection decisions and failed fetch checks are recorded in
 - CBP reference pages are general import guidance, not proof of a shipment's
   delay, status, or business impact. The BrightHome playbook is synthetic demo
   policy, not a real company procedure. Keep those source types distinct.
-- The language model is not trained or fine-tuned on the database. It retrieves selected records at request time via allowlisted read-only tools; deterministic Python code does the arithmetic. The separate document retrieval uses lexical BM25 with a small synonym map and can still miss paraphrases.
+- The language model is not trained or fine-tuned on the database. It receives the selected precomputed result only to explain it; deterministic Python code does the arithmetic and chooses permitted next steps. The separate document retrieval uses lexical BM25 with a small synonym map and can still miss paraphrases.

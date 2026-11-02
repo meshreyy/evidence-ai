@@ -1,4 +1,4 @@
-"""Run answer-level agent evaluations; one case calls OpenAI, two use preflight guards."""
+"""Run answer-level checks for the explanation-only OpenAI path and deterministic guards."""
 import json
 import os
 from pathlib import Path

@@ -3,31 +3,30 @@
 ```mermaid
 flowchart TD
     U[Operations analyst] --> UI[Two-page Streamlit workspace or CLI]
-    UI --> W[Bounded assistant workflow]
-    W -->|OpenAI function calling, max 4 calls| T[Read-only tool allowlist]
-    T --> C[Deterministic impact calculator]
-    C --> DB[(SQLite relational database\nseeded from synthetic CSV tables)]
-    T --> R[BM25 document retrieval\nwith small query synonym map]
-    R --> DOCS[(Saved CBP pages\nand synthetic demo playbook)]
-    W --> G[Grounded answer with evidence]
-    G --> U
-    E[Golden eval cases] --> C
-    E --> R
-    E --> W
+    UI --> C[Deterministic impact calculator]
+    C <--> DB[(SQLite relational database\nseeded from synthetic CSV tables)]
+    C --> R[Deterministic risk rules\nand allowed next steps]
+    R --> X[Grounded AI explanation layer\nno tools or DB access]
+    D[BM25 document retrieval] --> DOCS[(Saved CBP pages\nand synthetic playbook)]
+    DOCS --> X
+    X --> U
+    E[Golden evaluations] --> C
+    E --> D
+    E --> X
 ```
 
 ## Request flow
 
-1. The analyst starts on the Overview page to scan portfolio-level exposure, then opens Shipment analysis for one shipment or asks a question in the CLI.
-2. Deterministic guards answer known missing facts (unknown shipment IDs, absent delay cause, or unsupported actions) without asking the model to guess.
-3. For other questions, the OpenAI model can call only the read-only shipment-impact, shipment-lookup, and document-search tools. The tool budget is capped.
-4. Python calculates order shortfalls from SQLite records. BM25 retrieves document passages and source identifiers; the model explains the returned evidence.
-5. Golden evaluations check calculation results, retrieval sources, and selected answer requirements.
+1. The Overview page summarizes shipment exposure. The analyst selects a shipment on Shipment analysis.
+2. Python reads related records from SQLite and calculates inventory allocation and uncovered quantities. Explicit rules derive the allowed analyst next step.
+3. BM25 retrieves the relevant policy excerpt. The model receives only the precomputed result and policy passage, then returns a concise explanation; it has no tools, database access, or authority to change values/actions.
+4. Unknown shipments, missing delay causes, and unsupported actions are handled deterministically. If AI is unavailable, the verified result and recommendation still display.
+5. Evaluations check deterministic calculations, retrieval sources, explanation structure, and selected answer requirements.
 
 ## Data boundaries
 
 - SQLite is the runtime store, reproducibly seeded from versioned synthetic CSVs for shipments, inventory, orders, items, and demo accounts.
 - The local synthetic playbook is the authority for demo escalation policy, not real-company policy.
-- The language model is not trained or fine-tuned on the records; it reads selected facts at request time through tools. Python performs calculations.
+- The language model is not trained or fine-tuned on these records and cannot query them. It explains a bounded context supplied by application code; Python performs calculations and applies policy.
 - CBP pages provide general import guidance only. They do not establish a shipment's delay cause or business impact.
 - BM25 is a lexical ranker with a small explicit synonym map; it is not embedding-based semantic search.

@@ -1,10 +1,6 @@
 import unittest
 
-from src.openai_agent import (
-    MAX_TOOL_CALLS,
-    deterministic_preflight,
-    execute_tool,
-)
+from src.openai_agent import deterministic_preflight, execute_tool
 
 
 class OpenAIToolTest(unittest.TestCase):
@@ -54,9 +50,6 @@ class OpenAIToolTest(unittest.TestCase):
         answer = deterministic_preflight("Shipment S-999: which orders are affected?")
         self.assertIn("S-999 is not present", answer)
         self.assertIn("can't determine", answer)
-
-    def test_tool_budget_is_bounded(self):
-        self.assertEqual(MAX_TOOL_CALLS, 4)
 
     def test_rejects_unregistered_tool(self):
         with self.assertRaisesRegex(ValueError, "Tool not allowed"):

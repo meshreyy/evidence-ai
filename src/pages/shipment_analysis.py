@@ -4,10 +4,11 @@ import os
 import pandas as pd
 import streamlit as st
 
+from src.ai_explainer import explain_impact_with_openai
 from src.documents import search_documents
-from src.openai_agent import answer_with_openai, execute_tool
+from src.openai_agent import execute_tool
 from src.supplychain import read_csv
-from src.ui import page_heading
+from src.ui import get_openai_api_key, page_heading
 
 shipments = read_csv("shipments.csv")
 shipment_by_id = {row["shipment_id"]: row for row in shipments}
@@ -48,6 +49,64 @@ m2.metric("Shipment quantity", f"{int(shipment['qty']):,} units")
 m3.metric("Available inventory", f"{inventory_by_item.get(shipment['item_id'], 0):,} units")
 m4.metric("Orders exposed", len(risks))
 
+api_key = get_openai_api_key()
+policy_results = search_documents("shortage above 10 units same-day analyst review", limit=1)
+policy_text = policy_results[0]["text"] if policy_results else "No policy passage retrieved."
+state_key = f"ai_explanation_{selected_id}"
+
+with st.container(border=True):
+    ai_title, ai_badge = st.columns([5, 1])
+    with ai_title:
+        st.markdown('<div class="eyebrow">AI DECISION BRIEF</div>', unsafe_allow_html=True)
+        st.markdown("### Explain the operational impact")
+        st.caption("AI summarizes the verified calculation and policy. It does not calculate quantities or decide actions.")
+    with ai_badge:
+        st.markdown('<div class="pill">GROUNDED</div>', unsafe_allow_html=True)
+
+    if api_key:
+        if st.button("Generate AI explanation", type="primary", key=f"generate_{selected_id}"):
+            with st.spinner("Explaining the verified result…"):
+                try:
+                    st.session_state[state_key] = explain_impact_with_openai(
+                        shipment,
+                        impact,
+                        policy_text,
+                        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                        api_key=api_key,
+                    )
+                except Exception as exc:
+                    st.session_state[state_key] = {"error": type(exc).__name__}
+        brief = st.session_state.get(state_key)
+        if brief:
+            if "error" in brief:
+                st.error(f"AI explanation unavailable ({brief['error']}). The verified calculations below are unchanged.")
+            else:
+                st.markdown(f"**{brief['headline']}**")
+                st.write(brief["summary"])
+                insight_col, action_col = st.columns([1.2, 1])
+                with insight_col:
+                    st.markdown("**Why it matters**")
+                    for factor in brief["risk_factors"]:
+                        st.markdown(f"- {factor}")
+                with action_col:
+                    st.markdown("**Analyst focus**")
+                    st.info(brief["analyst_focus"])
+                st.caption(f"Evidence limitation: {brief['limitation']} · Synthetic scenario records")
+    else:
+        if risks:
+            focus = risks[0]
+            st.markdown(
+                f"**Verified context:** {focus['order_id']} · {focus['customer']} · "
+                f"{focus['qty_uncovered']} units uncovered · due {focus['due_date']}."
+            )
+        else:
+            st.markdown("**Verified context:** No order shortfall was found before this shipment arrives.")
+        st.warning(
+            "Connect a server-side OpenAI key to generate the AI decision brief. "
+            "The calculation and policy-backed recommendation remain available below."
+        )
+        st.button("Generate AI explanation", type="primary", disabled=True, key=f"generate_disabled_{selected_id}")
+
 left, right = st.columns([1.4, 1], gap="large")
 with left, st.container(border=True):
     st.markdown("### Customer order exposure")
@@ -87,32 +146,11 @@ with right, st.container(border=True):
         st.markdown("**Delay cause**")
         st.caption("Not recorded in this scenario. Do not infer or invent a cause.")
 
-has_api_key = bool(os.getenv("OPENAI_API_KEY"))
-with st.expander("Ask the AI to explain this result" if has_api_key else "AI explanation (optional)"):
-    if has_api_key:
-        st.caption("The model reads tool results at request time; it is not trained on these records. API usage may incur cost.")
-        with st.form("ai_explanation_form"):
-            ask_ai = st.form_submit_button("Generate explanation", type="primary")
-        if ask_ai:
-            question = (
-                f"Shipment {selected_id} is delayed. Which orders are at risk, "
-                "and what should the analyst do next?"
-            )
-            try:
-                st.write(answer_with_openai(
-                    question, model=os.getenv("OPENAI_MODEL", "gpt-4o-mini")
-                ))
-            except Exception as exc:
-                st.warning(f"AI explanation unavailable ({type(exc).__name__}); deterministic results remain available above.")
-    else:
-        st.caption("Set OPENAI_API_KEY in your environment to enable a model-generated explanation. Deterministic analysis works without it.")
-
 with st.expander("Evidence & calculation method"):
     st.markdown("**Runtime store** · SQLite tables: `shipments`, `items`, `inventory`, `orders`, `customers`")
     st.markdown("**Records used** · `data/supplychain.sqlite3` seeded from the versioned CSV files")
     st.markdown("**Policy used** · synthetic playbook; shortages above 10 units receive same-day analyst review")
-    policy = search_documents("shortage above 10 units same-day analyst review", limit=1)
-    if policy:
-        st.caption(policy[0]["text"])
+    if policy_results:
+        st.caption(policy_results[0]["text"])
     st.caption(impact["note"])
     st.caption("Business records and playbook are synthetic scenario data—not evidence about a real company.")

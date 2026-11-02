@@ -40,6 +40,19 @@ def load_workspace():
     return counts, shipment_summaries, exposed_orders, as_of
 
 
+def get_openai_api_key():
+    """Read a key from the server environment or Streamlit secrets, never UI input."""
+    import os
+
+    key = os.getenv("OPENAI_API_KEY")
+    if key:
+        return key
+    try:
+        return st.secrets.get("OPENAI_API_KEY")
+    except Exception:
+        return None
+
+
 def apply_visual_theme():
     st.markdown(
         """
