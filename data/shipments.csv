@@ -1,0 +1,2 @@
+shipment_id,item_id,qty,expected_arrival_date,delay_reason
+S-104,CTRL-01,100,2026-06-20,

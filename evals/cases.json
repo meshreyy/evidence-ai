@@ -1,0 +1,34 @@
+[
+  {
+    "id": "impact-known-shortfall",
+    "type": "impact",
+    "shipment_id": "S-104",
+    "expected_orders": [{"order_id": "O-202", "qty_uncovered": 15}]
+  },
+  {
+    "id": "impact-unknown-shipment",
+    "type": "impact-error",
+    "shipment_id": "S-999",
+    "expected_error_contains": "Unknown shipment"
+  },
+  {
+    "id": "retrieval-synthetic-policy",
+    "type": "retrieval",
+    "query": "uncovered quantity high priority same day analyst review",
+    "expected_source_prefix": "synthetic://brighthome/operations-playbook"
+  },
+  {
+    "id": "retrieval-public-import-guidance",
+    "type": "retrieval",
+    "query": "importer customs broker merchandise",
+    "expected_source_prefix": "https://www.cbp.gov/",
+    "expected_title_contains": "CBP"
+  },
+  {
+    "id": "retrieval-paraphrased-policy-question",
+    "type": "retrieval",
+    "query": "missing parts need urgent escalation",
+    "expected_source_prefix": "synthetic://brighthome/operations-playbook",
+    "expected_title_contains": "Synthetic"
+  }
+]

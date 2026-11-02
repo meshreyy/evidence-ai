@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+.venv/
+__pycache__/
+*.py[cod]
+.DS_Store
+evals/latest_agent_results.json
