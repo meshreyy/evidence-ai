@@ -6,11 +6,11 @@
 
 ## 2. Show the business logic (45 seconds)
 
-Select shipment `S-104` (CTRL-01) and review its impact. Explain that the tool joins order/inventory records by `item_id`, allocates current stock by due date and priority, and finds O-202 is short 15 units before the November 20 arrival. Python does the arithmetic; the model does not.
+Start on Overview: point out 50 shipment scenarios, the exposure-by-shipment chart, the most exposed orders, and the shipment register. Open Shipment analysis, select `S-104` (CTRL-01), and show O-202 is short 15 units before the November 20 arrival. The tool joins records by `item_id`, allocates stock by due date and priority, and Python does the arithmetic.
 
 ## 3. Show evidence and bounded recommendation (45 seconds)
 
-Expand evidence. Point out that order impact comes from the CSV files and same-day analyst review comes from a clearly labeled synthetic playbook. CBP references are general import context, not evidence of this shipment's cause.
+Expand Evidence & calculation method. Point out that runtime business facts come from SQLite, while the reproducible CSV files are the seed data. Same-day analyst review comes from the synthetic playbook. CBP references are general import context, not evidence of this shipment's cause.
 
 ## 4. Show the agent and limits (30 seconds)
 

@@ -2,7 +2,7 @@
 
 ```mermaid
 flowchart TD
-    U[Operations analyst] --> UI[Streamlit UI or CLI]
+    U[Operations analyst] --> UI[Two-page Streamlit workspace or CLI]
     UI --> W[Bounded assistant workflow]
     W -->|OpenAI function calling, max 4 calls| T[Read-only tool allowlist]
     T --> C[Deterministic impact calculator]
@@ -18,7 +18,7 @@ flowchart TD
 
 ## Request flow
 
-1. The analyst selects a shipment or asks a question.
+1. The analyst starts on the Overview page to scan portfolio-level exposure, then opens Shipment analysis for one shipment or asks a question in the CLI.
 2. Deterministic guards answer known missing facts (unknown shipment IDs, absent delay cause, or unsupported actions) without asking the model to guess.
 3. For other questions, the OpenAI model can call only the read-only shipment-impact, shipment-lookup, and document-search tools. The tool budget is capped.
 4. Python calculates order shortfalls from SQLite records. BM25 retrieves document passages and source identifiers; the model explains the returned evidence.
