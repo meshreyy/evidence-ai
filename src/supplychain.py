@@ -1,14 +1,21 @@
-import csv
 from datetime import date
-from pathlib import Path
 
+from src.database import read_table
 
-DATA_DIR = Path(__file__).resolve().parents[1] / "data"
+CSV_TABLES = {
+    "items.csv": "items",
+    "customers.csv": "customers",
+    "shipments.csv": "shipments",
+    "inventory.csv": "inventory",
+    "orders.csv": "orders",
+}
 
 
 def read_csv(filename):
-    with (DATA_DIR / filename).open(newline="", encoding="utf-8") as file:
-        return list(csv.DictReader(file))
+    """Read a familiar CSV-named view from the seeded SQLite database."""
+    if filename not in CSV_TABLES:
+        raise ValueError(f"Unknown supply-chain dataset: {filename}")
+    return read_table(CSV_TABLES[filename])
 
 
 def validate_records(shipments, inventory_rows, orders):
@@ -80,14 +87,19 @@ def calculate_at_risk_orders(shipment, inventory_rows, orders):
         shortfall = needed - covered
         available -= covered
         if shortfall:
-            results.append({
+            result = {
                 "order_id": order["order_id"],
+                "customer": order.get("customer_name", order.get("customer_id", "")),
+                "item": order.get("item_name", item_id),
                 "qty_needed": needed,
                 "qty_uncovered": shortfall,
                 "due_date": order["due_date"],
                 "shipment_id": shipment_id,
                 "expected_arrival_date": arrival.isoformat(),
-            })
+            }
+            if order.get("customer_segment"):
+                result["customer_segment"] = order["customer_segment"]
+            results.append(result)
 
     return results
 

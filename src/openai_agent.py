@@ -96,7 +96,10 @@ def execute_tool(name, arguments):
             "prohibited_or_unsupported": [
                 "Do not recommend contacting customers or suppliers, expediting freight, or changing allocations: this demo has no records or policy supporting those actions."
             ],
-            "data_sources": ["data/shipments.csv", "data/inventory.csv", "data/orders.csv"],
+            "data_sources": [
+                "data/supplychain.sqlite3 (shipments, inventory, orders)",
+                "data/shipments.csv", "data/inventory.csv", "data/orders.csv",
+            ],
             "note": "The calculation allocates current stock by due date, then numeric priority. Same-day arrival is treated conservatively.",
         }
     if name == "get_shipment_details":
@@ -115,6 +118,10 @@ def execute_tool(name, arguments):
             "found": True,
             "shipment_id": shipment["shipment_id"],
             "item_id": shipment["item_id"],
+            "item_name": shipment.get("item_name"),
+            "quantity": int(shipment["qty"]),
+            "status": shipment.get("status"),
+            "as_of_date": shipment.get("as_of_date"),
             "expected_arrival_date": shipment["expected_arrival_date"],
             "delay_reason": reason or None,
             "reason_status": "recorded" if reason else "not recorded in the demo data",

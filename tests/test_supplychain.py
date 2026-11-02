@@ -16,11 +16,14 @@ class SupplyChainImpactTest(unittest.TestCase):
     def test_finds_order_shortfall_before_delayed_shipment_arrives(self):
         self.assertEqual(find_at_risk_orders("S-104"), [{
             "order_id": "O-202",
+            "customer": "Demo Account 002",
+            "item": "Control module",
             "qty_needed": 25,
+            "customer_segment": "OEM",
             "qty_uncovered": 15,
-            "due_date": "2026-06-15",
+            "due_date": "2026-11-15",
             "shipment_id": "S-104",
-            "expected_arrival_date": "2026-06-20",
+            "expected_arrival_date": "2026-11-20",
         }])
 
     def test_rejects_unknown_shipment(self):

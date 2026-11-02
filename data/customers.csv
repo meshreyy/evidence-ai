@@ -1,0 +1,13 @@
+customer_id,customer_name,segment,region
+CUST-001,Demo Account 001,Wholesale,Midwest
+CUST-002,Demo Account 002,OEM,South
+CUST-003,Demo Account 003,Retail,West
+CUST-004,Demo Account 004,Wholesale,Northeast
+CUST-005,Demo Account 005,OEM,Midwest
+CUST-006,Demo Account 006,Retail,South
+CUST-007,Demo Account 007,Wholesale,West
+CUST-008,Demo Account 008,OEM,Northeast
+CUST-009,Demo Account 009,Retail,Midwest
+CUST-010,Demo Account 010,Wholesale,South
+CUST-011,Demo Account 011,OEM,West
+CUST-012,Demo Account 012,Retail,Northeast

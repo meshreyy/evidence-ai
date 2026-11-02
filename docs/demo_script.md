@@ -2,11 +2,11 @@
 
 ## 1. Set up the problem (30 seconds)
 
-“BrightHome is fictional. Its operations analyst has a delayed controller shipment and needs to know which customer orders are exposed. The data is synthetic so we can test exact expected results.”
+“This is a working prototype backed by a local SQLite database. Its 10 shipments, 10 SKUs, 48 order lines, inventory, and demo accounts are reproducibly generated synthetic scenario data—not a real company's records—so results have known ground truth.”
 
 ## 2. Show the business logic (45 seconds)
 
-Select shipment `S-104` and analyze it. Explain that the tool joins records using `item_id`, allocates current stock by due date and priority, and finds O-202 is short 15 units. The model does not do the arithmetic.
+Select shipment `S-104` (CTRL-01) and review its impact. Explain that the tool joins order/inventory records by `item_id`, allocates current stock by due date and priority, and finds O-202 is short 15 units before the November 20 arrival. Python does the arithmetic; the model does not.
 
 ## 3. Show evidence and bounded recommendation (45 seconds)
 
@@ -14,7 +14,7 @@ Expand evidence. Point out that order impact comes from the CSV files and same-d
 
 ## 4. Show the agent and limits (30 seconds)
 
-If API credits are available, enable the optional OpenAI explanation. Explain that it can call only allowlisted read-only tools, with a maximum tool-call budget. It cannot change orders or contact customers.
+If API credits are available, enable the optional OpenAI explanation. Explain that the model is not fine-tuned on the records: it can retrieve selected SQLite facts through allowlisted read-only tools, with a maximum tool-call budget. It cannot change orders or contact customers.
 
 ## 5. Show evaluation (30 seconds)
 

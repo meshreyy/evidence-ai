@@ -6,6 +6,22 @@
     "expected_orders": [{"order_id": "O-202", "qty_uncovered": 15}]
   },
   {
+    "id": "impact-no-shortage-on-another-shipment",
+    "type": "impact",
+    "shipment_id": "S-105",
+    "expected_orders": []
+  },
+  {
+    "id": "impact-multiple-at-risk-orders",
+    "type": "impact",
+    "shipment_id": "S-106",
+    "expected_orders": [
+      {"order_id": "O-209", "qty_uncovered": 13},
+      {"order_id": "O-210", "qty_uncovered": 24},
+      {"order_id": "O-211", "qty_uncovered": 16}
+    ]
+  },
+  {
     "id": "impact-unknown-shipment",
     "type": "impact-error",
     "shipment_id": "S-999",

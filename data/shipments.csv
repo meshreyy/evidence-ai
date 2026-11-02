@@ -1,2 +1,11 @@
-shipment_id,item_id,qty,expected_arrival_date,delay_reason
-S-104,CTRL-01,100,2026-06-20,
+shipment_id,item_id,qty,expected_arrival_date,delay_reason,status,as_of_date
+S-104,CTRL-01,100,2026-11-20,,Delayed,2026-11-02
+S-105,PUMP-02,60,2026-11-12,Carrier schedule change,Delayed,2026-11-02
+S-106,SENSOR-03,80,2026-11-27,Port congestion,Delayed,2026-11-02
+S-107,VALVE-04,50,2026-11-16,Documentation review,Delayed,2026-11-02
+S-108,MOTOR-05,40,2026-12-04,,Delayed,2026-11-02
+S-109,SEAL-06,200,2026-11-09,Carrier schedule change,Delayed,2026-11-02
+S-110,PCB-07,100,2026-12-10,Port congestion,Delayed,2026-11-02
+S-111,FAN-08,75,2026-11-23,,Delayed,2026-11-02
+S-112,CABLE-09,120,2026-11-14,Weather disruption,Delayed,2026-11-02
+S-113,BRKT-10,90,2026-11-30,Documentation review,Delayed,2026-11-02

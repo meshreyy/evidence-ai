@@ -1,0 +1,11 @@
+item_id,item_name,category,unit_cost_usd
+CTRL-01,Control module,Electronics,42.5
+PUMP-02,Compact fluid pump,Fluid systems,86.0
+SENSOR-03,Pressure sensor,Sensors,18.75
+VALVE-04,Flow control valve,Fluid systems,31.2
+MOTOR-05,Drive motor,Motion,124.0
+SEAL-06,Seal kit,Service parts,7.8
+PCB-07,Interface board,Electronics,55.0
+FAN-08,Cooling fan assembly,Thermal,23.4
+CABLE-09,Harness assembly,Electrical,12.6
+BRKT-10,Mounting bracket,Mechanical,9.25

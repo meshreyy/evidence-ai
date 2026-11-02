@@ -14,7 +14,7 @@ class SupplyChainDashboardTest(unittest.TestCase):
             [
                 ("Orders at risk", "1"),
                 ("Units uncovered", "15"),
-                ("Shipment arrival", "2026-06-20"),
+                ("Shipment arrival", "2026-11-20"),
             ],
         )
         self.assertTrue(any("O-202" in item.value and "same-day" in item.value for item in app.markdown))

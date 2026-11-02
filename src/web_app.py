@@ -10,6 +10,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from src.database import database_counts
 from src.documents import search_documents
 from src.openai_agent import answer_with_openai, execute_tool
 from src.supplychain import read_csv
@@ -18,41 +19,41 @@ st.set_page_config(page_title="SupplyChain Copilot", page_icon="📦", layout="w
 st.markdown(
     """
     <style>
-      :root { --ink:#172b4d; --muted:#667085; --line:#e5eaf0; --accent:#176b5b; }
-      .stApp { background:#f5f7fa; color:var(--ink); }
-      [data-testid="stHeader"] { background:rgba(245,247,250,.92); }
+      :root { --ink:#E7EEF5; --muted:#9AAABD; --line:#2A3948; --accent:#56D4B7; }
+      .stApp { background:#0C131B; color:var(--ink); }
+      [data-testid="stHeader"] { background:rgba(12,19,27,.92); }
       [data-testid="stAppViewContainer"] .main .block-container {
         max-width:1120px; padding-top:2.2rem; padding-bottom:3rem;
       }
       h1,h2,h3 { color:var(--ink); letter-spacing:-.025em; }
       h1 { font-size:2rem !important; font-weight:700 !important; margin-bottom:.2rem !important; }
       h2 { font-size:1.25rem !important; font-weight:650 !important; }
-      p, label { color:#344054; }
+      p, label { color:#C3CFDB; }
       [data-testid="stMetric"] {
-        background:#fff; border:1px solid var(--line); border-radius:12px;
-        padding:14px 18px; box-shadow:0 1px 2px rgba(16,24,40,.03);
+        background:#151F2B; border:1px solid var(--line); border-radius:12px;
+        padding:14px 18px; box-shadow:0 1px 2px rgba(0,0,0,.15);
       }
       [data-testid="stMetricLabel"] { color:var(--muted); font-size:.82rem; }
       [data-testid="stMetricValue"] { color:var(--ink); font-weight:700; }
       [data-testid="stVerticalBlockBorderWrapper"] {
-        background:#fff; border-color:var(--line); border-radius:12px;
+        background:#151F2B; border-color:var(--line); border-radius:12px;
       }
       div.stButton > button, div.stFormSubmitButton > button {
-        background:#176b5b; color:#fff; border:0; border-radius:8px;
+        background:#167C69; color:#F4FFFC; border:0; border-radius:8px;
         min-height:2.7rem; font-weight:600; padding:0 1.1rem;
       }
       div.stButton > button:hover, div.stFormSubmitButton > button:hover {
-        background:#105447; color:#fff; border:0;
+        background:#1B967D; color:#fff; border:0;
       }
-      .eyebrow { color:#176b5b; font-size:.74rem; font-weight:700; letter-spacing:.1em; }
-      .subcopy { color:#667085; font-size:1rem; margin-top:0; }
-      .demo-pill { display:inline-block; border:1px solid #d7e6e1; color:#176b5b;
-        background:#edf6f2; border-radius:999px; padding:.34rem .7rem;
+      .eyebrow { color:#56D4B7; font-size:.74rem; font-weight:700; letter-spacing:.1em; }
+      .subcopy { color:#9AAABD; font-size:1rem; margin-top:0; }
+      .demo-pill { display:inline-block; border:1px solid #245A50; color:#72E0C4;
+        background:#142B29; border-radius:999px; padding:.34rem .7rem;
         font-size:.74rem; font-weight:700; letter-spacing:.04em; }
-      .risk-callout { border-left:4px solid #d97706; background:#fff8eb;
-        padding:.8rem 1rem; border-radius:0 8px 8px 0; color:#693f0b; }
-      .quiet { color:#667085; font-size:.86rem; }
-      hr { border-color:#e5eaf0; }
+      .risk-callout { border-left:4px solid #E9A23B; background:#30271A;
+        padding:.8rem 1rem; border-radius:0 8px 8px 0; color:#F5D9A9; }
+      .quiet { color:#9AAABD; font-size:.86rem; }
+      hr { border-color:#2A3948; }
     </style>
     """,
     unsafe_allow_html=True,
@@ -60,24 +61,37 @@ st.markdown(
 
 shipments = read_csv("shipments.csv")
 shipment_by_id = {row["shipment_id"]: row for row in shipments}
+data_counts = database_counts()
 
 header, badge = st.columns([5, 1])
 with header:
     st.markdown('<div class="eyebrow">OPERATIONS WORKSPACE</div>', unsafe_allow_html=True)
     st.title("Shipment impact review")
     st.markdown(
-        '<p class="subcopy">See which orders may be exposed when an inbound shipment is late.</p>',
+        '<p class="subcopy">Prioritize customer orders exposed to inbound delays.</p>',
         unsafe_allow_html=True,
     )
+    st.caption(
+        f"Live prototype workspace · {data_counts['shipments']} shipment records · "
+        f"{data_counts['items']} SKUs · {data_counts['orders']} order lines · "
+        f"{data_counts['customers']} accounts"
+    )
 with badge:
-    st.markdown('<div class="demo-pill">DEMO DATA</div>', unsafe_allow_html=True)
+    st.markdown('<div class="demo-pill">SYNTHETIC DATASET</div>', unsafe_allow_html=True)
 
 with st.container(border=True):
     st.subheader("Choose a shipment")
     with st.form("shipment_review_form"):
         choose, arrival_col, action_col = st.columns([2.2, 1.2, 1])
         with choose:
-            selected_id = st.selectbox("Delayed shipment", list(shipment_by_id))
+            selected_id = st.selectbox(
+                "Delayed shipment",
+                list(shipment_by_id),
+                format_func=lambda shipment_id: (
+                    f"{shipment_id} · {shipment_by_id[shipment_id]['item_id']} — "
+                    f"{shipment_by_id[shipment_id]['item_name']}"
+                ),
+            )
         shipment = shipment_by_id[selected_id]
         with arrival_col:
             st.text_input("Expected arrival", shipment["expected_arrival_date"], disabled=True)
@@ -143,7 +157,15 @@ if reviewed_id == selected_id:
 
     with st.expander("Evidence, policy, and assumptions"):
         st.markdown("**Business records used for the calculation**")
-        st.code("data/shipments.csv  ·  data/inventory.csv  ·  data/orders.csv", language=None)
+        st.code(
+            "SQLite: data/supplychain.sqlite3\n"
+            "Seed tables: shipments · items · inventory · orders · customers",
+            language=None,
+        )
+        st.caption(
+            "The local database is reproducibly rebuilt from the CSV seed files "
+            "when those files change."
+        )
         st.markdown("**Demo policy (synthetic—not a real company policy)**")
         st.caption("Local source: `docs/sources/brighthome_demo_playbook.md`")
         policy_passages = search_documents(
@@ -152,6 +174,12 @@ if reviewed_id == selected_id:
         if policy_passages:
             st.write(policy_passages[0]["text"])
         st.caption(impact["note"])
+        st.markdown("**How the AI uses this data**")
+        st.write(
+            "The language model is not trained or fine-tuned on these records. "
+            "It receives selected database results through read-only tools at question time; "
+            "Python performs the allocation arithmetic."
+        )
         st.markdown("**Public references (general import context; not shipment evidence)**")
         st.markdown(
             "[CBP: Basic Importing and Exporting](https://www.cbp.gov/trade/basic-import-export) · "
@@ -165,6 +193,6 @@ else:
 
 st.divider()
 st.markdown(
-    '<div class="quiet">Prototype only · synthetic company records · analyst makes the final decision</div>',
+    '<div class="quiet">Working prototype · synthetic scenario data, not live company records · analyst makes the final decision</div>',
     unsafe_allow_html=True,
 )

@@ -1,8 +1,9 @@
 # SupplyChain Copilot (prototype)
 
-A small decision-support demo for an operations analyst investigating a delayed
-shipment. It uses synthetic shipment/inventory/order records for business facts,
-a clearly labeled synthetic playbook, and saved CBP pages for general import guidance.
+A working decision-support prototype for an operations analyst investigating delayed
+inbound supply. It runs on a relational SQLite database seeded from a reproducible,
+clearly labeled synthetic dataset: 10 shipments, 10 SKUs, 10 inventory balances,
+48 customer order lines, and 12 demo accounts. No private or real-company data is used.
 
 ## Run
 
@@ -13,6 +14,8 @@ model-based tool calling:
 python3 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
+python scripts/generate_synthetic_data.py  # optional: regenerate labeled CSV seed records
+python scripts/build_database.py          # rebuild the relational SQLite store
 python -m unittest discover -s tests -v
 python -m src.evaluate
 python -m src.evaluate_agent  # live OpenAI answer checks; uses API credits
@@ -31,13 +34,14 @@ Example question: `Shipment S-104 is delayed. Which orders are at risk?`
 
 ## Architecture
 
-- `src/supplychain.py`: validates records and deterministically allocates stock.
+- `src/database.py`: creates a relational SQLite database with foreign keys and indexes from the versioned CSV seed tables.
+- `src/supplychain.py`: validates database records and deterministically allocates stock.
 - `src/documents.py`: extracts passages from saved CBP HTML pages and the
   synthetic playbook, then ranks them with BM25 plus a small explicit synonym map.
 - `src/assistant.py`: bounded, read-only tool workflow; currently routes using
   a shipment-ID pattern, not an LLM planner.
 - `src/cli.py`: simple interactive demo.
-- `src/web_app.py`: Streamlit dashboard to select a shipment and review its impact, supported next steps, and evidence.
+- `src/web_app.py`: dark-mode Streamlit operations dashboard to select a shipment and review its impact, supported next steps, and evidence.
 - `tests/` and `evals/cases.json`: calculation, validation, retrieval, workflow,
   and deterministic golden-case evaluations. Run `python -m src.evaluate` to
   see tool/retrieval results. Run `python -m src.evaluate_agent` for live answer
@@ -58,15 +62,13 @@ Source-selection decisions and failed fetch checks are recorded in
 
 ## Assumptions and limitations
 
-- All company data is fictional and explicitly for demonstration.
+- All shipment, inventory, customer, product, and order records are synthetic scenario data; they do not describe an actual company.
+- The database has relational shape and enough linked records for a portfolio prototype, but it is not historical or enterprise-operational data.
 - Orders due on the shipment arrival date are treated conservatively as at risk.
 - Allocate current inventory by earliest due date, then lower numeric priority,
   then order ID. Lower priority number means higher priority.
-- This prototype considers one replenishment shipment and does not model
-  multiple incoming shipments, reserved stock, partial shipment arrivals, or
-  supplier substitutions.
+- Each demo SKU has one inbound shipment. The prototype analyzes one selected shipment at a time and does not aggregate multiple incoming shipments, reserved stock, partial shipment arrivals, or supplier substitutions.
 - CBP reference pages are general import guidance, not proof of a shipment's
   delay, status, or business impact. The BrightHome playbook is synthetic demo
   policy, not a real company procedure. Keep those source types distinct.
-- Retrieval uses lexical BM25 with a small synonym map; it can still miss
-  paraphrases. Model answers must not treat a weak match as evidence.
+- The language model is not trained or fine-tuned on the database. It retrieves selected records at request time via allowlisted read-only tools; deterministic Python code does the arithmetic. The separate document retrieval uses lexical BM25 with a small synonym map and can still miss paraphrases.

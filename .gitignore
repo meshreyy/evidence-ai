@@ -6,3 +6,5 @@ __pycache__/
 *.py[cod]
 .DS_Store
 evals/latest_agent_results.json
+data/*.sqlite3
+data/*.sqlite3-*
