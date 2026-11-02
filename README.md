@@ -2,8 +2,8 @@
 
 A working decision-support prototype for an operations analyst investigating delayed
 inbound supply. It runs on a relational SQLite database seeded from a reproducible,
-clearly labeled synthetic dataset: 10 shipments, 10 SKUs, 10 inventory balances,
-48 customer order lines, and 12 demo accounts. No private or real-company data is used.
+clearly labeled synthetic dataset: 50 shipments, 50 SKUs, 50 inventory balances,
+248 customer order lines, and 12 demo accounts. No private or real-company data is used.
 
 ## Run
 
@@ -63,7 +63,7 @@ Source-selection decisions and failed fetch checks are recorded in
 ## Assumptions and limitations
 
 - All shipment, inventory, customer, product, and order records are synthetic scenario data; they do not describe an actual company.
-- The database has relational shape and enough linked records for a portfolio prototype, but it is not historical or enterprise-operational data.
+- The 50-shipment database is large enough to exercise multiple scenarios in this portfolio prototype, but it is not historical or enterprise-operational data.
 - Orders due on the shipment arrival date are treated conservatively as at risk.
 - Allocate current inventory by earliest due date, then lower numeric priority,
   then order ID. Lower priority number means higher priority.

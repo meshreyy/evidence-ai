@@ -9,3 +9,43 @@ PCB-07,Interface board,Electronics,55.0
 FAN-08,Cooling fan assembly,Thermal,23.4
 CABLE-09,Harness assembly,Electrical,12.6
 BRKT-10,Mounting bracket,Mechanical,9.25
+PART-011,Assembly component 011,Service parts,89.35
+PART-012,Assembly component 012,Mechanical,96.7
+PART-013,Assembly component 013,Electrical,104.05
+PART-014,Assembly component 014,Fluid systems,111.4
+PART-015,Assembly component 015,Service parts,118.75
+PART-016,Assembly component 016,Mechanical,126.1
+PART-017,Assembly component 017,Electrical,133.45
+PART-018,Assembly component 018,Fluid systems,140.8
+PART-019,Assembly component 019,Service parts,148.15
+PART-020,Assembly component 020,Mechanical,10.5
+PART-021,Assembly component 021,Electrical,17.85
+PART-022,Assembly component 022,Fluid systems,25.2
+PART-023,Assembly component 023,Service parts,32.55
+PART-024,Assembly component 024,Mechanical,39.9
+PART-025,Assembly component 025,Electrical,47.25
+PART-026,Assembly component 026,Fluid systems,54.6
+PART-027,Assembly component 027,Service parts,61.95
+PART-028,Assembly component 028,Mechanical,69.3
+PART-029,Assembly component 029,Electrical,76.65
+PART-030,Assembly component 030,Fluid systems,84.0
+PART-031,Assembly component 031,Service parts,91.35
+PART-032,Assembly component 032,Mechanical,98.7
+PART-033,Assembly component 033,Electrical,106.05
+PART-034,Assembly component 034,Fluid systems,113.4
+PART-035,Assembly component 035,Service parts,120.75
+PART-036,Assembly component 036,Mechanical,128.1
+PART-037,Assembly component 037,Electrical,135.45
+PART-038,Assembly component 038,Fluid systems,142.8
+PART-039,Assembly component 039,Service parts,150.15
+PART-040,Assembly component 040,Mechanical,12.5
+PART-041,Assembly component 041,Electrical,19.85
+PART-042,Assembly component 042,Fluid systems,27.2
+PART-043,Assembly component 043,Service parts,34.55
+PART-044,Assembly component 044,Mechanical,41.9
+PART-045,Assembly component 045,Electrical,49.25
+PART-046,Assembly component 046,Fluid systems,56.6
+PART-047,Assembly component 047,Service parts,63.95
+PART-048,Assembly component 048,Mechanical,71.3
+PART-049,Assembly component 049,Electrical,78.65
+PART-050,Assembly component 050,Fluid systems,86.0

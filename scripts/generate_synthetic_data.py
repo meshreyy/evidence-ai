@@ -6,7 +6,7 @@ from pathlib import Path
 DATA_DIR = Path(__file__).resolve().parents[1] / "data"
 AS_OF = date(2026, 11, 2)
 
-ITEMS = [
+BASE_ITEMS = [
     ("CTRL-01", "Control module", "Electronics", 42.50),
     ("PUMP-02", "Compact fluid pump", "Fluid systems", 86.00),
     ("SENSOR-03", "Pressure sensor", "Sensors", 18.75),
@@ -18,12 +18,18 @@ ITEMS = [
     ("CABLE-09", "Harness assembly", "Electrical", 12.60),
     ("BRKT-10", "Mounting bracket", "Mechanical", 9.25),
 ]
+ITEMS = BASE_ITEMS + [
+    (f"PART-{i:03}", f"Assembly component {i:03}",
+     ["Mechanical", "Electrical", "Fluid systems", "Service parts"][i % 4],
+     round(8.5 + (i * 7.35) % 145, 2))
+    for i in range(11, 51)
+]
 CUSTOMERS = [
     (f"CUST-{i:03}", f"Demo Account {i:03}", ["Retail", "Wholesale", "OEM"][i % 3],
      ["Northeast", "Midwest", "South", "West"][i % 4])
     for i in range(1, 13)
 ]
-SHIPMENT_SPECS = [
+BASE_SHIPMENT_SPECS = [
     ("S-104", "CTRL-01", 100, 18, ""),
     ("S-105", "PUMP-02", 60, 10, "Carrier schedule change"),
     ("S-106", "SENSOR-03", 80, 25, "Port congestion"),
@@ -35,10 +41,22 @@ SHIPMENT_SPECS = [
     ("S-112", "CABLE-09", 120, 12, "Weather disruption"),
     ("S-113", "BRKT-10", 90, 28, "Documentation review"),
 ]
-INVENTORY = {
+BASE_INVENTORY = {
     "CTRL-01": 30, "PUMP-02": 65, "SENSOR-03": 5, "VALVE-04": 22,
     "MOTOR-05": 0, "SEAL-06": 100, "PCB-07": 14, "FAN-08": 36,
     "CABLE-09": 75, "BRKT-10": 8,
+}
+
+EXTRA_SHIPMENT_SPECS = [
+    (f"S-{103 + i:03}", f"PART-{i:03}", 25 + (i * 13) % 180,
+     8 + (i * 11) % 39,
+     ["", "Carrier schedule change", "Port congestion", "Weather disruption"][i % 4])
+    for i in range(11, 51)
+]
+SHIPMENT_SPECS = BASE_SHIPMENT_SPECS + EXTRA_SHIPMENT_SPECS
+INVENTORY = {
+    **BASE_INVENTORY,
+    **{f"PART-{i:03}": (i * 29) % 101 for i in range(11, 51)},
 }
 
 

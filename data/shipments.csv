@@ -9,3 +9,43 @@ S-110,PCB-07,100,2026-12-10,Port congestion,Delayed,2026-11-02
 S-111,FAN-08,75,2026-11-23,,Delayed,2026-11-02
 S-112,CABLE-09,120,2026-11-14,Weather disruption,Delayed,2026-11-02
 S-113,BRKT-10,90,2026-11-30,Documentation review,Delayed,2026-11-02
+S-114,PART-011,168,2026-11-14,Weather disruption,Delayed,2026-11-02
+S-115,PART-012,181,2026-11-25,,Delayed,2026-11-02
+S-116,PART-013,194,2026-12-06,Carrier schedule change,Delayed,2026-11-02
+S-117,PART-014,27,2026-12-17,Port congestion,Delayed,2026-11-02
+S-118,PART-015,40,2026-11-19,Weather disruption,Delayed,2026-11-02
+S-119,PART-016,53,2026-11-30,,Delayed,2026-11-02
+S-120,PART-017,66,2026-12-11,Carrier schedule change,Delayed,2026-11-02
+S-121,PART-018,79,2026-11-13,Port congestion,Delayed,2026-11-02
+S-122,PART-019,92,2026-11-24,Weather disruption,Delayed,2026-11-02
+S-123,PART-020,105,2026-12-05,,Delayed,2026-11-02
+S-124,PART-021,118,2026-12-16,Carrier schedule change,Delayed,2026-11-02
+S-125,PART-022,131,2026-11-18,Port congestion,Delayed,2026-11-02
+S-126,PART-023,144,2026-11-29,Weather disruption,Delayed,2026-11-02
+S-127,PART-024,157,2026-12-10,,Delayed,2026-11-02
+S-128,PART-025,170,2026-11-12,Carrier schedule change,Delayed,2026-11-02
+S-129,PART-026,183,2026-11-23,Port congestion,Delayed,2026-11-02
+S-130,PART-027,196,2026-12-04,Weather disruption,Delayed,2026-11-02
+S-131,PART-028,29,2026-12-15,,Delayed,2026-11-02
+S-132,PART-029,42,2026-11-17,Carrier schedule change,Delayed,2026-11-02
+S-133,PART-030,55,2026-11-28,Port congestion,Delayed,2026-11-02
+S-134,PART-031,68,2026-12-09,Weather disruption,Delayed,2026-11-02
+S-135,PART-032,81,2026-11-11,,Delayed,2026-11-02
+S-136,PART-033,94,2026-11-22,Carrier schedule change,Delayed,2026-11-02
+S-137,PART-034,107,2026-12-03,Port congestion,Delayed,2026-11-02
+S-138,PART-035,120,2026-12-14,Weather disruption,Delayed,2026-11-02
+S-139,PART-036,133,2026-11-16,,Delayed,2026-11-02
+S-140,PART-037,146,2026-11-27,Carrier schedule change,Delayed,2026-11-02
+S-141,PART-038,159,2026-12-08,Port congestion,Delayed,2026-11-02
+S-142,PART-039,172,2026-11-10,Weather disruption,Delayed,2026-11-02
+S-143,PART-040,185,2026-11-21,,Delayed,2026-11-02
+S-144,PART-041,198,2026-12-02,Carrier schedule change,Delayed,2026-11-02
+S-145,PART-042,31,2026-12-13,Port congestion,Delayed,2026-11-02
+S-146,PART-043,44,2026-11-15,Weather disruption,Delayed,2026-11-02
+S-147,PART-044,57,2026-11-26,,Delayed,2026-11-02
+S-148,PART-045,70,2026-12-07,Carrier schedule change,Delayed,2026-11-02
+S-149,PART-046,83,2026-12-18,Port congestion,Delayed,2026-11-02
+S-150,PART-047,96,2026-11-20,Weather disruption,Delayed,2026-11-02
+S-151,PART-048,109,2026-12-01,,Delayed,2026-11-02
+S-152,PART-049,122,2026-12-12,Carrier schedule change,Delayed,2026-11-02
+S-153,PART-050,135,2026-11-14,Port congestion,Delayed,2026-11-02

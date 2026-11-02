@@ -2,7 +2,7 @@
 
 ## 1. Set up the problem (30 seconds)
 
-“This is a working prototype backed by a local SQLite database. Its 10 shipments, 10 SKUs, 48 order lines, inventory, and demo accounts are reproducibly generated synthetic scenario data—not a real company's records—so results have known ground truth.”
+“This is a working prototype backed by a local SQLite database. Its 50 shipments, 50 SKUs, 248 order lines, inventory, and 12 demo accounts are reproducibly generated synthetic scenario data—not a real company's records—so results have known ground truth.”
 
 ## 2. Show the business logic (45 seconds)
 

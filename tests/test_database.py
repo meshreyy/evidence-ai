@@ -10,7 +10,7 @@ class SupplyChainDatabaseTest(unittest.TestCase):
         self.assertTrue(database_path.exists())
         self.assertEqual(
             database_counts(),
-            {"items": 10, "customers": 12, "shipments": 10, "inventory": 10, "orders": 48},
+            {"items": 50, "customers": 12, "shipments": 50, "inventory": 50, "orders": 248},
         )
 
     def test_order_view_joins_customer_and_item_descriptions(self):
