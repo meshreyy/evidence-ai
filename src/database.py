@@ -6,6 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
 DB_PATH = DATA_DIR / "supplychain.sqlite3"
+SCHEMA_PATH = DATA_DIR / "schema.sql"
 SEED_FILES = {
     "items": "items.csv",
     "customers": "customers.csv",
@@ -14,50 +15,10 @@ SEED_FILES = {
     "orders": "orders.csv",
 }
 
-SCHEMA = """
-PRAGMA foreign_keys = ON;
-CREATE TABLE IF NOT EXISTS items (
-    item_id TEXT PRIMARY KEY,
-    item_name TEXT NOT NULL,
-    category TEXT NOT NULL,
-    unit_cost_usd REAL NOT NULL CHECK (unit_cost_usd >= 0)
-);
-CREATE TABLE IF NOT EXISTS customers (
-    customer_id TEXT PRIMARY KEY,
-    customer_name TEXT NOT NULL,
-    segment TEXT NOT NULL,
-    region TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS shipments (
-    shipment_id TEXT PRIMARY KEY,
-    item_id TEXT NOT NULL REFERENCES items(item_id),
-    qty INTEGER NOT NULL CHECK (qty > 0),
-    expected_arrival_date TEXT NOT NULL,
-    delay_reason TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL,
-    as_of_date TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS inventory (
-    item_id TEXT PRIMARY KEY REFERENCES items(item_id),
-    available_qty INTEGER NOT NULL CHECK (available_qty >= 0),
-    as_of_date TEXT NOT NULL
-);
-CREATE TABLE IF NOT EXISTS orders (
-    order_id TEXT PRIMARY KEY,
-    item_id TEXT NOT NULL REFERENCES items(item_id),
-    customer_id TEXT NOT NULL REFERENCES customers(customer_id),
-    qty_needed INTEGER NOT NULL CHECK (qty_needed > 0),
-    due_date TEXT NOT NULL,
-    priority INTEGER NOT NULL CHECK (priority >= 1),
-    order_status TEXT NOT NULL
-);
-CREATE INDEX IF NOT EXISTS idx_orders_item_due ON orders(item_id, due_date, priority);
-CREATE INDEX IF NOT EXISTS idx_shipments_arrival ON shipments(expected_arrival_date);
-"""
-
-
 def _seed_is_current():
-    return DB_PATH.exists() and all(
+    if not DB_PATH.exists() or DB_PATH.stat().st_mtime < SCHEMA_PATH.stat().st_mtime:
+        return False
+    return all(
         DB_PATH.stat().st_mtime >= (DATA_DIR / filename).stat().st_mtime
         for filename in SEED_FILES.values()
     )
@@ -73,7 +34,7 @@ def initialize_database(force=False):
     temporary_path.unlink(missing_ok=True)
     connection = sqlite3.connect(temporary_path)
     try:
-        connection.executescript(SCHEMA)
+        connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
         for table, filename in SEED_FILES.items():
             with (DATA_DIR / filename).open(newline="", encoding="utf-8") as file:
                 rows = list(csv.DictReader(file))

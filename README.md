@@ -16,6 +16,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 python scripts/generate_synthetic_data.py  # optional: regenerate labeled CSV seed records
 python scripts/build_database.py          # rebuild the relational SQLite store
+sqlite3 data/supplychain.sqlite3 < data/inspect.sql  # inspect counts and S-104 allocation in SQL
 python -m unittest discover -s tests -v
 python -m src.evaluate
 python -m src.evaluate_agent  # live OpenAI answer checks; uses API credits
@@ -34,6 +35,7 @@ Example question: `Shipment S-104 is delayed. Which orders are at risk?`
 
 ## Architecture
 
+- `data/schema.sql`: inspectable SQL schema; `data/inspect.sql`: runnable SQL count/join/allocation examples.
 - `src/database.py`: creates a relational SQLite database with foreign keys and indexes from the versioned CSV seed tables.
 - `src/supplychain.py`: validates database records and deterministically allocates stock.
 - `src/documents.py`: extracts passages from saved CBP HTML pages and the
@@ -55,8 +57,9 @@ The local retrieval uses BM25 and a small explicit synonym map; it is still
 lexical search, not embedding-based semantic retrieval. Do not claim
 production-grade or fully semantic RAG. The model-based path requires an API key and network access.
 
-See [`docs/architecture.md`](docs/architecture.md) for the system diagram and
-[`docs/demo_script.md`](docs/demo_script.md) for a short walkthrough.
+See [`docs/architecture.md`](docs/architecture.md) for the system diagram,
+[`docs/database_guide.md`](docs/database_guide.md) to inspect the SQL database,
+and [`docs/demo_script.md`](docs/demo_script.md) for a short walkthrough.
 Source-selection decisions and failed fetch checks are recorded in
 [`docs/sources/README.md`](docs/sources/README.md).
 
