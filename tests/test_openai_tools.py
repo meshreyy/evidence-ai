@@ -1,6 +1,7 @@
 import unittest
 from unittest.mock import patch
 
+import tests.support  # Installs the offline Firestore fake for this test process.
 from src.openai_agent import answer_with_openai, deterministic_preflight, execute_tool
 
 

@@ -38,7 +38,7 @@ def execute_tool(name, arguments):
                 "Do not recommend contacting customers or suppliers, expediting freight, or changing allocations: this demo has no records or policy supporting those actions."
             ],
             "data_sources": [
-                "data/supplychain.sqlite3 (shipments, inventory, orders)",
+                "Firebase Firestore collections: shipments, inventory, orders",
                 "data/shipments.csv", "data/inventory.csv", "data/orders.csv",
             ],
             "note": "The calculation allocates current stock by due date, then numeric priority. Same-day arrival is treated conservatively.",

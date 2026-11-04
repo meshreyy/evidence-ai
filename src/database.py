@@ -1,88 +1,165 @@
-"""Local SQLite store seeded reproducibly from the labeled synthetic CSV files."""
+"""Firebase Firestore access and reproducible synthetic-data seeding."""
 import csv
-import sqlite3
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA_DIR = ROOT / "data"
-DB_PATH = DATA_DIR / "supplychain.sqlite3"
-SCHEMA_PATH = DATA_DIR / "schema.sql"
 SEED_FILES = {
-    "items": "items.csv",
-    "customers": "customers.csv",
-    "shipments": "shipments.csv",
-    "inventory": "inventory.csv",
-    "orders": "orders.csv",
+    "items": ("items.csv", "item_id"),
+    "customers": ("customers.csv", "customer_id"),
+    "shipments": ("shipments.csv", "shipment_id"),
+    "inventory": ("inventory.csv", "item_id"),
+    "orders": ("orders.csv", "order_id"),
 }
-
-def _seed_is_current():
-    if not DB_PATH.exists() or DB_PATH.stat().st_mtime < SCHEMA_PATH.stat().st_mtime:
-        return False
-    return all(
-        DB_PATH.stat().st_mtime >= (DATA_DIR / filename).stat().st_mtime
-        for filename in SEED_FILES.values()
-    )
+INTEGER_FIELDS = {"qty", "available_qty", "qty_needed", "priority"}
+FLOAT_FIELDS = {"unit_cost_usd"}
+_firestore_client = None
 
 
-def initialize_database(force=False):
-    """Create/rebuild the local relational database from source CSV seed files."""
-    DATA_DIR.mkdir(exist_ok=True)
-    if not force and _seed_is_current():
-        return DB_PATH
+class FirebaseConfigurationError(RuntimeError):
+    """Raised when Firestore credentials or its SDK are not configured."""
 
-    temporary_path = DB_PATH.with_suffix(".tmp")
-    temporary_path.unlink(missing_ok=True)
-    connection = sqlite3.connect(temporary_path)
+
+def set_firestore_client_for_testing(client):
+    """Inject a Firestore-compatible client in unit tests."""
+    global _firestore_client
+    _firestore_client = client
+
+
+def get_firestore_client():
+    """Return the Firebase Admin Firestore client using server-side credentials."""
+    global _firestore_client
+    if _firestore_client is not None:
+        return _firestore_client
+
+    project_id = os.getenv("FIREBASE_PROJECT_ID") or os.getenv("GOOGLE_CLOUD_PROJECT")
+    credentials_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+    if not project_id:
+        raise FirebaseConfigurationError(
+            "Set FIREBASE_PROJECT_ID and GOOGLE_APPLICATION_CREDENTIALS to connect to Firebase. "
+            "Keep the service-account JSON outside the repository."
+        )
+    if credentials_path and not Path(credentials_path).is_file():
+        raise FirebaseConfigurationError(
+            "GOOGLE_APPLICATION_CREDENTIALS must point to your local Firebase service-account JSON file."
+        )
     try:
-        connection.executescript(SCHEMA_PATH.read_text(encoding="utf-8"))
-        for table, filename in SEED_FILES.items():
-            with (DATA_DIR / filename).open(newline="", encoding="utf-8") as file:
-                rows = list(csv.DictReader(file))
-            if not rows:
-                raise ValueError(f"Synthetic seed file is empty: {filename}")
-            columns = list(rows[0])
-            placeholders = ",".join("?" for _ in columns)
-            quoted_columns = ",".join(f'"{column}"' for column in columns)
-            values = [tuple(row[column] for column in columns) for row in rows]
-            connection.executemany(
-                f'INSERT INTO "{table}" ({quoted_columns}) VALUES ({placeholders})',
-                values,
+        import firebase_admin
+        from firebase_admin import credentials, firestore
+
+        try:
+            app = firebase_admin.get_app()
+        except ValueError:
+            credential = (
+                credentials.Certificate(credentials_path)
+                if credentials_path
+                else credentials.ApplicationDefault()
             )
-        connection.commit()
-    except Exception:
-        connection.close()
-        temporary_path.unlink(missing_ok=True)
-        raise
-    else:
-        connection.close()
-    temporary_path.replace(DB_PATH)
-    return DB_PATH
+            app = firebase_admin.initialize_app(credential, {"projectId": project_id})
+        _firestore_client = firestore.client(app=app)
+        return _firestore_client
+    except ImportError as exc:
+        raise FirebaseConfigurationError(
+            "Firebase Admin SDK is missing. Install project dependencies with `pip install -r requirements.txt`."
+        ) from exc
+    except Exception as exc:
+        raise FirebaseConfigurationError(
+            f"Could not connect to Firebase project {project_id!r}: {type(exc).__name__}. "
+            "Check the project ID, service-account permissions, and network connection."
+        ) from exc
 
 
-def read_table(table):
-    """Read a table-shaped view, joining descriptive item/customer fields."""
-    initialize_database()
-    queries = {
-        "items": "SELECT * FROM items ORDER BY item_id",
-        "customers": "SELECT * FROM customers ORDER BY customer_id",
-        "shipments": "SELECT s.*, i.item_name FROM shipments s JOIN items i USING(item_id) ORDER BY shipment_id",
-        "inventory": "SELECT v.*, i.item_name FROM inventory v JOIN items i USING(item_id) ORDER BY item_id",
-        "orders": """SELECT o.*, i.item_name, c.customer_name, c.segment AS customer_segment,
-                          c.region AS customer_region
-                   FROM orders o JOIN items i USING(item_id)
-                   JOIN customers c USING(customer_id) ORDER BY order_id""",
-    }
-    if table not in queries:
-        raise ValueError(f"Unknown database table: {table}")
-    with sqlite3.connect(DB_PATH) as connection:
-        connection.row_factory = sqlite3.Row
-        return [dict(row) for row in connection.execute(queries[table])]
+def _convert_csv_row(row):
+    converted = dict(row)
+    for key in INTEGER_FIELDS & converted.keys():
+        converted[key] = int(converted[key])
+    for key in FLOAT_FIELDS & converted.keys():
+        converted[key] = float(converted[key])
+    return converted
 
 
-def database_counts():
-    initialize_database()
-    with sqlite3.connect(DB_PATH) as connection:
-        return {
-            table: connection.execute(f'SELECT COUNT(*) FROM "{table}"').fetchone()[0]
-            for table in SEED_FILES
-        }
+def seed_firestore(client=None, replace=False):
+    """Upload versioned CSV seed records to Firestore using stable document IDs.
+
+    Re-running without --replace is idempotent: records with the same IDs are
+    updated, while other records are left untouched. --replace deletes the
+    five demo collections first and should only be used for this demo project.
+    """
+    client = client or get_firestore_client()
+    if replace:
+        for collection_name in SEED_FILES:
+            docs = list(client.collection(collection_name).stream())
+            for start in range(0, len(docs), 400):
+                batch = client.batch()
+                for doc in docs[start:start + 400]:
+                    batch.delete(doc.reference)
+                batch.commit()
+
+    for collection_name, (filename, id_field) in SEED_FILES.items():
+        with (DATA_DIR / filename).open(newline="", encoding="utf-8") as source:
+            rows = [_convert_csv_row(row) for row in csv.DictReader(source)]
+        if not rows:
+            raise ValueError(f"Synthetic seed file is empty: {filename}")
+        for start in range(0, len(rows), 400):
+            batch = client.batch()
+            for row in rows[start:start + 400]:
+                batch.set(
+                    client.collection(collection_name).document(row[id_field]),
+                    row,
+                )
+            batch.commit()
+    return database_counts(client)
+
+
+def _collection_rows(client, name):
+    return [doc.to_dict() for doc in client.collection(name).stream()]
+
+
+def read_table(table, client=None):
+    """Read a Firestore collection and enrich order rows with related labels."""
+    if table not in SEED_FILES:
+        raise ValueError(f"Unknown Firestore collection: {table}")
+    client = client or get_firestore_client()
+    rows = _collection_rows(client, table)
+    if table == "items" or table == "customers":
+        rows.sort(key=lambda row: row[SEED_FILES[table][1]])
+        return rows
+
+    items = {row["item_id"]: row for row in _collection_rows(client, "items")}
+    if table == "shipments" or table == "inventory":
+        for row in rows:
+            item = items.get(row.get("item_id"), {})
+            row["item_name"] = item.get("item_name", row.get("item_id", ""))
+        rows.sort(key=lambda row: SEED_FILES[table][1])
+        return rows
+
+    customers = {row["customer_id"]: row for row in _collection_rows(client, "customers")}
+    for row in rows:
+        item = items.get(row.get("item_id"), {})
+        customer = customers.get(row.get("customer_id"), {})
+        row["item_name"] = item.get("item_name", row.get("item_id", ""))
+        row["customer_name"] = customer.get("customer_name", row.get("customer_id", ""))
+        row["customer_segment"] = customer.get("segment", "")
+        row["customer_region"] = customer.get("region", "")
+    rows.sort(key=lambda row: row["order_id"])
+    return rows
+
+
+def database_counts(client=None):
+    """Return record counts for each seeded Firestore collection."""
+    client = client or get_firestore_client()
+    counts = {}
+    try:
+        for collection_name in SEED_FILES:
+            collection = client.collection(collection_name)
+            try:
+                counts[collection_name] = int(collection.count().get()[0][0].value)
+            except (AttributeError, IndexError, TypeError):
+                counts[collection_name] = len(list(collection.stream()))
+    except Exception as exc:
+        raise FirebaseConfigurationError(
+            "Could not read Firestore collections. Confirm Cloud Firestore is enabled, "
+            "the demo collections are seeded, and the service account has Firestore access."
+        ) from exc
+    return counts

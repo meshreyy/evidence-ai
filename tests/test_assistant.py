@@ -1,5 +1,6 @@
 import unittest
 
+import tests.support  # Installs the offline Firestore fake for this test process.
 from src.assistant import MAX_TOOL_CALLS, investigate
 
 

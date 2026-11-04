@@ -151,7 +151,7 @@ else:
     st.caption("No policy escalation is indicated by the available records.")
 
 with st.expander("Sources & calculation"):
-    st.caption("SQLite: shipments · inventory · orders · items · customers")
+    st.caption("Firebase Firestore collections: shipments · inventory · orders · items · customers")
     st.caption("Policy: `docs/sources/brighthome_demo_playbook.md` (synthetic scenario policy)")
     if policy_results:
         st.write(policy_text)

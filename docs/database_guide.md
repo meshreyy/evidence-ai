@@ -1,29 +1,44 @@
-# Inspecting the dataset and SQL database
+# Firebase Firestore setup
 
-This repository includes the synthetic source tables as CSV files and a SQL schema. The application builds a local SQLite database from those versioned inputs; the generated `.sqlite3` file is ignored by Git and is recreated when you run the app or the build script.
+The app stores the synthetic demo records in Firebase Cloud Firestore. Firestore is a document database, so the five CSV seed files become collections of documents with stable IDs:
 
-## Rebuild and inspect
+- `customers` — demo customer accounts
+- `orders` — customer order lines
+- `items` — SKU descriptions
+- `inventory` — on-hand balances
+- `shipments` — inbound shipment scenarios
 
-From the project root:
+Orders keep `customer_id` and `item_id` references. The app resolves those references when it prepares an order view; Firestore itself does not enforce SQL foreign keys. The calculation and allocation logic remains deterministic in Python.
 
-```bash
-python scripts/generate_synthetic_data.py  # optional; regenerates deterministic CSV seed data
-python scripts/build_database.py          # creates data/supplychain.sqlite3
-sqlite3 data/supplychain.sqlite3 < data/inspect.sql
-```
+## Connect a Firebase project
 
-The schema is visible in [`data/schema.sql`](../data/schema.sql), the SQL inspection queries are in [`data/inspect.sql`](../data/inspect.sql), and the reproducible source records are in `data/*.csv`. Open `data/supplychain.sqlite3` in DB Browser for SQLite or another SQLite viewer to browse tables and run queries.
+1. Create a Firebase project in the Firebase console and create a **Cloud Firestore** database in Native mode.
+2. Create a service account with the minimum IAM permissions needed to read and write Firestore documents. Download its JSON key and store it outside this repository. Never commit or paste this key into chat.
+3. Install dependencies and configure the server environment:
 
-The database contains 50 shipment records, 50 SKUs, 50 inventory balances, 248 order lines, and 12 demo accounts. Foreign keys link orders, items, customers, inventory, and inbound shipments. Dates are part of a fixed synthetic scenario snapshot (as of 2026-11-02), not live operational data.
+   ```bash
+   python -m pip install -r requirements.txt
+   export FIREBASE_PROJECT_ID="your-firebase-project-id"
+   export GOOGLE_APPLICATION_CREDENTIALS="$HOME/.config/supplychain-copilot/firebase-service-account.json"
+   ```
 
-## What to tell a reviewer
+4. Upload the reproducible synthetic records:
 
-“The app uses a local relational SQLite database seeded from reproducible synthetic CSV records. The LLM is not trained on this data; it queries selected records through read-only tools, while deterministic Python code computes inventory allocation. I can inspect the schema, tables, joins, and a SQL reproduction of the S-104 shortfall.”
+   ```bash
+   python scripts/build_database.py
+   ```
 
-This is a portfolio-scale working prototype—not a real company database or production-grade supply-chain system. Each demo SKU has one inbound shipment; multi-shipment aggregation is not implemented.
+   The command uses stable document IDs and is safe to rerun. To delete and recreate only the five demo collections first, use `python scripts/build_database.py --replace`.
+5. Start the app in the same terminal so it inherits the Firebase environment:
 
-## Firebase or hosted data
+   ```bash
+   streamlit run src/web_app.py
+   ```
 
-Firebase Firestore is a document/NoSQL database, not SQL. It could store this data, but would add cloud configuration, credentials, access-control rules, network dependencies, and a mismatch with the relational order/inventory joins. It would not make synthetic data more real or improve model quality by itself.
+The Firebase Admin SDK authenticates on the server; no service-account credentials are sent to the browser. Firestore security rules do not replace server-side IAM for this Admin SDK access.
 
-For this portfolio prototype, SQLite is the simplest inspectable and reproducible choice. If a hosted relational database is specifically needed later, a PostgreSQL service such as Supabase is a closer fit. Never put administrator/service-role credentials in a public repository; use narrowly scoped read-only access and keep secrets in deployment settings.
+## Synthetic records and local tests
+
+The versioned `data/*.csv` files are the reproducible source records: 12 demo accounts, 248 orders, 50 items, 50 inventory balances, and 50 shipments. Regenerate them with `python scripts/generate_synthetic_data.py`, then rerun the Firestore seed command if you want the cloud records updated. `python -m unittest discover -s tests -v` uses an in-memory Firestore-compatible test double and does not contact Firebase or require credentials.
+
+All account and operational records are synthetic. Never use this prototype's generated records as real-company facts.

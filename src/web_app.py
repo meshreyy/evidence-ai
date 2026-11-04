@@ -1,4 +1,4 @@
-"""Native two-page Streamlit application for SupplyChain Copilot."""
+"""Native two-page Streamlit application backed by Firebase Firestore."""
 import sys
 from pathlib import Path
 
@@ -9,7 +9,7 @@ APP_DIR = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from src.database import database_counts
+from src.database import FirebaseConfigurationError, database_counts
 from src.ui import apply_visual_theme
 
 st.set_page_config(
@@ -20,7 +20,17 @@ st.set_page_config(
 )
 apply_visual_theme()
 
-counts = database_counts()
+try:
+    counts = database_counts()
+except FirebaseConfigurationError as exc:
+    st.error("Firebase Firestore is not configured for this app yet.")
+    st.info(str(exc))
+    st.code(
+        "export FIREBASE_PROJECT_ID=your-firebase-project-id\n"
+        "export GOOGLE_APPLICATION_CREDENTIALS=/absolute/path/to/service-account.json"
+    )
+    st.stop()
+
 with st.sidebar:
     st.markdown(
         '<div class="brand"><span class="brand-mark">◈</span> SupplyChain Copilot</div>',
@@ -31,7 +41,7 @@ with st.sidebar:
     st.markdown("**Workspace data**")
     st.caption(
         f"{counts['shipments']} shipments · {counts['items']} SKUs\n\n"
-        f"{counts['orders']} order lines · SQLite"
+        f"{counts['orders']} order lines · Firebase Firestore"
     )
     st.markdown('<div class="pill">SYNTHETIC SCENARIO</div>', unsafe_allow_html=True)
     st.divider()
@@ -48,11 +58,6 @@ pages = [
         APP_DIR / "pages" / "shipment_analysis.py",
         title="Shipment analysis",
         icon="🔎",
-    ),
-    st.Page(
-        APP_DIR / "pages" / "data_explorer.py",
-        title="Data explorer",
-        icon="🗄️",
     ),
 ]
 page = st.navigation(pages, position="sidebar")

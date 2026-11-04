@@ -1,5 +1,6 @@
 import unittest
 
+import tests.support  # Installs the offline Firestore fake for this test process.
 from src.supplychain import calculate_at_risk_orders, find_at_risk_orders
 
 

@@ -2,7 +2,7 @@
 
 ## 1. Set up the problem (30 seconds)
 
-“This is a working prototype backed by a local SQLite database. Its 50 shipments, 50 SKUs, 248 order lines, inventory, and 12 demo accounts are reproducibly generated synthetic scenario data—not a real company's records—so results have known ground truth.”
+“This is a working prototype backed by Firebase Cloud Firestore. Its 50 shipments, 50 SKUs, 248 order lines, inventory, and 12 demo accounts are reproducibly generated synthetic scenario data—not a real company's records—so results have known ground truth.”
 
 ## 2. Show the business logic (45 seconds)
 
@@ -10,11 +10,11 @@ Start on Overview: point out 50 shipment scenarios, the exposure-by-shipment cha
 
 ## 3. Show evidence and bounded recommendation (45 seconds)
 
-Expand Evidence & calculation method. Point out that runtime business facts come from SQLite, while the reproducible CSV files are the seed data. Same-day analyst review comes from the synthetic playbook. CBP references are general import context, not evidence of this shipment's cause.
+Expand Sources & calculation. Point out that runtime business facts come from Firebase Firestore, while the reproducible CSV files are the seed data. Same-day analyst review comes from the synthetic playbook. CBP references are general import context, not evidence of this shipment's cause.
 
 ## 4. Show the agent and limits (30 seconds)
 
-If an API key is configured, generate the AI Decision Brief. Explain that Python already calculated the result and selected the policy-supported action; the model receives only that bounded context to explain why it matters. It has no database tools and cannot change quantities, contact customers, or choose new actions.
+If an API key is configured, generate the AI explanation. Explain that Python already calculated the result and selected the policy-supported action; the model receives only that bounded context to explain why it matters. It has no database tools and cannot change quantities, contact customers, or choose new actions.
 
 ## 5. Show evaluation (30 seconds)
 

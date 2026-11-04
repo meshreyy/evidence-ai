@@ -70,6 +70,6 @@ register_rows = [{
 } for row in shipments]
 st.dataframe(pd.DataFrame(register_rows), width="stretch", hide_index=True, height=360)
 st.caption(
-    "Data is synthetic and reproducible. The dashboard uses SQLite for operational records; "
+    "Data is synthetic and reproducible. The dashboard uses Firebase Firestore for operational records; "
     "the model does not train on this dataset."
 )

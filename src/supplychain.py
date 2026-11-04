@@ -12,7 +12,7 @@ CSV_TABLES = {
 
 
 def read_csv(filename):
-    """Read a familiar CSV-named view from the seeded SQLite database."""
+    """Read a seed-table-named view from the Firebase Firestore collections."""
     if filename not in CSV_TABLES:
         raise ValueError(f"Unknown supply-chain dataset: {filename}")
     return read_table(CSV_TABLES[filename])
