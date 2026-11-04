@@ -20,6 +20,20 @@ class SupplyChainDashboardTest(unittest.TestCase):
         self.assertEqual(metrics["Units uncovered"], "1,046")
         self.assertTrue(app.dataframe)
 
+    def test_data_explorer_browses_database_tables_in_browser(self):
+        app = AppTest.from_file("src/web_app.py").run(timeout=30)
+        app.switch_page("pages/data_explorer.py").run(timeout=30)
+
+        self.assertFalse(list(app.exception))
+        self.assertEqual([title.value for title in app.title], ["Database explorer"])
+        metrics = {metric.label: metric.value for metric in app.metric}
+        self.assertEqual(metrics["Linked tables"], "5")
+        self.assertEqual(metrics["Total records"], "410")
+        app.selectbox[0].select("orders").run(timeout=30)
+        self.assertTrue(any("Customer orders" in item.value for item in app.markdown))
+        self.assertTrue(app.dataframe)
+        self.assertFalse(list(app.exception))
+
     @patch("openai.OpenAI")
     def test_shipment_page_generates_visible_ai_brief(self, openai_client):
         client = openai_client.return_value

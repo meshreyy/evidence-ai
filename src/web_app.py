@@ -49,6 +49,11 @@ pages = [
         title="Shipment analysis",
         icon="🔎",
     ),
+    st.Page(
+        APP_DIR / "pages" / "data_explorer.py",
+        title="Data explorer",
+        icon="🗄️",
+    ),
 ]
 page = st.navigation(pages, position="sidebar")
 page.run()
