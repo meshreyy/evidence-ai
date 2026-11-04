@@ -26,6 +26,12 @@ streamlit run src/web_app.py  # visual interface
 
 Set `OPENAI_API_KEY` in the server environment or copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and add your own key. Never paste the key into source code, chat, or commit the real secrets file. The model only receives the selected shipment's deterministic result and relevant policy excerpt; it has no database tools and does not calculate or choose actions. Without a key, the overview and deterministic analysis still work, while the AI panel shows the verified context and explains how to enable model-generated commentary. Set `OPENAI_MODEL` to override `gpt-4o-mini`.
 
+## Deploy on Render
+
+This project is a Streamlit server, so Render is the direct deployment target. `render.yaml` contains its build, start, health-check, and Firebase settings. In Render, create a Blueprint from this GitHub repository, then add a **Secret File** containing the Firebase service-account JSON at `/etc/secrets/firebase-service-account.json`. Keep `FIREBASE_PROJECT_ID` set to `evidence-ai-e962b`; set `OPENAI_API_KEY` only if you want live AI explanations. Deploy and verify both pages and the `/_stcore/health` health check. The free Render service may sleep when idle.
+
+Vercel does not directly host this Streamlit server. To use Vercel, the UI would need a separate Next.js frontend on Vercel and a Python API on Render; that is a larger frontend/backend rewrite, not a second deployment of the current app.
+
 Example question: `Shipment S-104 is delayed. Which orders are at risk?`
 
 ## Architecture

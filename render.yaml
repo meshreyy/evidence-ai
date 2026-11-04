@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: supplychain-copilot
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run src/web_app.py --server.address 0.0.0.0 --server.port $PORT --server.headless true
+    healthCheckPath: /_stcore/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.11
+      - key: FIREBASE_PROJECT_ID
+        value: evidence-ai-e962b
+      - key: GOOGLE_APPLICATION_CREDENTIALS
+        value: /etc/secrets/firebase-service-account.json
+      - key: OPENAI_API_KEY
+        sync: false
