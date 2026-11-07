@@ -29,6 +29,18 @@ and minimal offline CI workflow are included. The walkthrough holds five actual
 app screenshots; it is not a real AI generation recording. The stack and scope
 remain Streamlit, Firestore, BM25, and deterministic Python calculations.
 
+## UI cleanup
+
+Both pages use a consistent compact heading, neutral surfaces, restrained status
+colors, and clearer controls. The overview chart uses sorted horizontal bars;
+investigation opens directly from the attention panel. Analysis uses one
+allocation table (including covered orders and customer details), a separate AI
+commentary panel, and quieter deterministic action cards. Phone layouts keep
+overview metrics in a two-by-two grid and investigation metrics in one row.
+Checked at 1440px desktop and 390px phone widths; no page-level horizontal
+overflow. The README screenshots and five-state offline walkthrough were refreshed.
+The existing 46 tests and all seven deterministic evaluations pass.
+
 ## Remaining public release checks
 
 Before calling the public release complete:

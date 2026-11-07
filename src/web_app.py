@@ -25,7 +25,7 @@ st.set_page_config(
     page_title="SupplyChain Copilot",
     page_icon="📦",
     layout="wide",
-    initial_sidebar_state="expanded",
+    initial_sidebar_state="auto",
 )
 apply_visual_theme()
 
@@ -57,7 +57,7 @@ with st.sidebar:
     st.markdown("**Workspace data**")
     st.caption(
         f"{counts['shipments']} shipments · {counts['items']} SKUs\n\n"
-        f"{counts['orders']} order lines · Firebase Firestore"
+        f"{counts['orders']} order lines · {'Local demo' if OFFLINE_DEMO else 'Firebase Firestore'}"
     )
     st.markdown('<div class="pill">SYNTHETIC SCENARIO</div>', unsafe_allow_html=True)
     st.divider()
@@ -67,13 +67,13 @@ pages = [
     st.Page(
         APP_DIR / "pages" / "overview.py",
         title="Overview",
-        icon="📊",
+        icon=":material/space_dashboard:",
         default=True,
     ),
     st.Page(
         APP_DIR / "pages" / "shipment_analysis.py",
         title="Shipment analysis",
-        icon="🔎",
+        icon=":material/local_shipping:",
     ),
 ]
 page = st.navigation(pages, position="sidebar")

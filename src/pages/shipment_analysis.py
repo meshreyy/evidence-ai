@@ -57,17 +57,18 @@ if risks:
         f"""<div class="impact-hero">
           <div class="impact-label">{severity} &nbsp;·&nbsp; {selected_id}</div>
           <div class="impact-value">{units_uncovered:,} units uncovered across {len(risks)} {"order" if len(risks) == 1 else "orders"}</div>
-          <div>First exposed order {first['order_id']}: {first['qty_uncovered']} units short · due {first['due_date']} · shipment arrives {shipment['expected_arrival_date']} · {gap_days} days later</div>
+          <div class="impact-detail">First exposed order {first['order_id']}: {first['qty_uncovered']} units short · due {first['due_date']} · shipment arrives {shipment['expected_arrival_date']} · {gap_days} days later</div>
         </div>""",
         unsafe_allow_html=True,
     )
 else:
     st.success("No at-risk customer orders before this shipment's arrival.")
 
-m1, m2, m3 = st.columns(3)
-m1.metric("Orders at risk", len(risks))
-m2.metric("Available inventory", f"{inventory_by_item.get(shipment['item_id'], 0):,} units")
-m3.metric("Shipment quantity", f"{int(shipment['qty']):,} units")
+with st.container(key="analysis_metrics"):
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Orders at risk", len(risks))
+    m2.metric("Available inventory", f"{inventory_by_item.get(shipment['item_id'], 0):,} units")
+    m3.metric("Shipment quantity", f"{int(shipment['qty']):,} units")
 
 left, right = st.columns([1.25, 1], gap="medium")
 with left, st.container(border=True):
@@ -76,7 +77,7 @@ with left, st.container(border=True):
     st.dataframe(pd.DataFrame([{
         "Order": row["order_id"], "Needed": row["qty_needed"],
         "Allocated": row["qty_covered"], "Short": row["qty_uncovered"],
-        "Due": row["due_date"],
+        "Due": row["due_date"], "Customer": row.get("customer", ""),
     } for row in impact["allocation"]]), width="stretch", hide_index=True)
     if risks:
         st.caption("Available inventory is allocated by due date, then priority.")
@@ -92,16 +93,6 @@ with left, st.container(border=True):
             f'{focus["qty_uncovered"]} short</div></div>',
             unsafe_allow_html=True,
         )
-        st.markdown("**Orders requiring review**")
-        order_rows = [{
-            "Order": row["order_id"],
-            "Customer": row.get("customer", ""),
-            "Needed": row["qty_needed"],
-            "Covered": row.get("qty_covered", row["qty_needed"] - row["qty_uncovered"]),
-            "Short": row["qty_uncovered"],
-            "Due": row["due_date"],
-        } for row in risks]
-        st.dataframe(pd.DataFrame(order_rows), width="stretch", hide_index=True)
         st.markdown(
             f'<div class="timeline"><strong>ORDER DUE&nbsp; {focus["due_date"]}</strong>'
             '<div class="timeline-line"></div>'
@@ -122,7 +113,7 @@ if st.session_state.get("ai_input_snapshot") != snapshot:
     st.session_state["ai_input_snapshot"] = snapshot
 with right, st.container(border=True):
     st.markdown('<div class="eyebrow">AI EXPLANATION</div>', unsafe_allow_html=True)
-    st.markdown("### Why this matters")
+    st.markdown("### Analyst brief")
     st.caption("Generated text is AI commentary. Verified quantities and actions are shown separately.")
     if risks:
         st.markdown(f"**Verified input:** {first['order_id']} · {first['qty_uncovered']} units short · due {first['due_date']}.")
@@ -153,14 +144,14 @@ with right, st.container(border=True):
         else:
             st.caption("Generate a brief to explain the timing, shortage, and policy-supported focus.")
     else:
-        st.caption("Add a server-side OpenAI key and enable private live AI to generate the explanation. No key is stored in the browser or repository.")
+        st.caption("AI commentary is optional. Verified allocation and recommended actions are available without it.")
 
 if risks:
     st.markdown("### Recommended analyst action")
     for action in impact["allowed_next_steps"]:
         st.markdown(
-            f'<div class="impact-hero"><span class="status-risk">{action["order_id"]}</span>'
-            f' &nbsp; {action["action"]}</div>',
+            f'<div class="action-card"><span class="status-risk">{action["order_id"]}</span>'
+            f'<span>{action["action"]}</span></div>',
             unsafe_allow_html=True,
         )
 else:

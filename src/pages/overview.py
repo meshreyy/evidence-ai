@@ -16,11 +16,12 @@ at_risk_shipments = [row for row in shipments if row["units_uncovered"] > 0]
 units_uncovered = sum(row["units_uncovered"] for row in at_risk_shipments)
 orders_at_risk = sum(row["at_risk_orders"] for row in at_risk_shipments)
 
-m1, m2, m3, m4 = st.columns(4)
-m1.metric("Inbound shipments", counts["shipments"], help="Synthetic delayed-shipment scenarios")
-m2.metric("Shipments with exposure", len(at_risk_shipments))
-m3.metric("Orders at risk", orders_at_risk)
-m4.metric("Units uncovered", f"{units_uncovered:,}")
+with st.container(key="overview_metrics"):
+    m1, m2, m3, m4 = st.columns(4)
+    m1.metric("Inbound shipments", counts["shipments"], help="Synthetic delayed-shipment scenarios")
+    m2.metric("Shipments with exposure", len(at_risk_shipments))
+    m3.metric("Orders at risk", orders_at_risk)
+    m4.metric("Units uncovered", f"{units_uncovered:,}")
 
 left, right = st.columns([1.35, 1], gap="large")
 with left, st.container(border=True):
@@ -36,8 +37,8 @@ with left, st.container(border=True):
              "Units uncovered": row["units_uncovered"]}
             for row in chart_rows
         ]).set_index("Shipment · SKU")
-        st.bar_chart(chart, color="#58D6B5", height=300)
-        st.caption("Showing the 10 highest-exposure shipments. Select one in Shipment analysis for order-level detail.")
+        st.bar_chart(chart, color="#62BBA6", horizontal=True, height=340, x_label="Uncovered units", y_label="", sort=False)
+        st.caption("The 10 highest-exposure shipments · current stock allocated before arrival.")
     else:
         st.success("No order exposure in the current scenario records.")
 
@@ -53,9 +54,15 @@ with right, st.container(border=True):
             "Due": row["due_date"],
         } for row in exposed_orders[:7]]
         st.dataframe(pd.DataFrame(focus_rows), width="stretch", hide_index=True)
-        st.markdown("**Next:** Open *Shipment analysis* in the sidebar to review the recommended response and evidence.")
+
     else:
         st.success("No customer orders currently show a shortfall.")
+
+    if shipments:
+        chosen = st.selectbox("Open shipment", [row["shipment_id"] for row in shipments])
+        if st.button("Open shipment analysis", width="stretch", type="primary"):
+            st.session_state["requested_shipment"] = chosen
+            st.switch_page("pages/shipment_analysis.py")
 
 st.markdown("### Shipment register")
 st.caption(f"Arrival windows and calculated exposure across all {counts['shipments']} inbound scenarios")
@@ -69,12 +76,6 @@ register_rows = [{
     "Units uncovered": row["units_uncovered"],
 } for row in shipments]
 st.dataframe(pd.DataFrame(register_rows), width="stretch", hide_index=True, height=360)
-if shipments:
-    chosen = st.selectbox("Open shipment", [row["shipment_id"] for row in shipments])
-    if st.button("Open shipment analysis"):
-        st.session_state["requested_shipment"] = chosen
-        st.switch_page("pages/shipment_analysis.py")
 st.caption(
-    "Data is synthetic and reproducible. The dashboard uses Firebase Firestore for operational records; "
-    "the model does not train on this dataset."
+    "Synthetic demo records · deterministic allocation by due date, priority, and order ID · read-only decision support."
 )

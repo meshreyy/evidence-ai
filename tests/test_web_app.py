@@ -62,7 +62,7 @@ class SupplyChainDashboardTest(unittest.TestCase):
         self.assertTrue(any("O-202" in str(item.value) for item in app.dataframe))
         self.assertTrue(any("same-day operations analyst review" in item.value for item in app.markdown))
         self.assertTrue(any("AI EXPLANATION" in item.value for item in app.markdown))
-        self.assertTrue(any("Add a server-side OpenAI key" in item.value for item in app.caption))
+        self.assertTrue(any("AI commentary is optional" in item.value for item in app.caption))
 
 
 if __name__ == "__main__":

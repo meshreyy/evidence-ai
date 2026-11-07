@@ -13,7 +13,7 @@ app states; synthetic data; no AI generation or paid calls.
 
 [Local verification and remaining release work](docs/release_status.md)
 
-![Shipment analysis showing verified totals and allocation](docs/images/shipment-analysis.png)
+![Overview showing shipment exposure and direct investigation](docs/images/overview.png)
 
 Decision support with optional AI commentary: Python owns allocation, shortages, and
 policy actions so the results stay inspectable when generation is unavailable.

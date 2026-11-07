@@ -59,63 +59,94 @@ def apply_visual_theme():
     st.markdown(
         """
         <style>
-          :root { --ink:#EEF2FF; --muted:#9BA8C1; --line:#29344A;
-                  --surface:#171E2E; --accent:#8290FF; --cyan:#46D7CF; }
-          .stApp { background:#0D1220; color:var(--ink); }
-          [data-testid="stHeader"] { background:rgba(13,18,32,.96); }
-          [data-testid="stAppViewContainer"] .main .block-container {
-            max-width:1380px; padding-top:1.35rem; padding-bottom:2.2rem;
+          :root {
+            --ink:#E8EDF5; --muted:#94A3B8; --line:#293446;
+            --surface:#151E2C; --accent:#82A7FF; --cyan:#62D6BC;
           }
-          [data-testid="stSidebar"] { background:#111827; border-right:1px solid var(--line); }
+          .stApp { background:#0E1520; color:var(--ink); }
+          [data-testid="stHeader"] { background:rgba(14,21,32,.95); }
+          [data-testid="stAppDeployButton"] { display:none; }
+          [data-testid="stMainBlockContainer"] {
+            max-width:1320px; padding:2.25rem 2.75rem 3rem;
+          }
+          [data-testid="stVerticalBlock"] { gap:1.1rem; }
+          [data-testid="stSidebar"] { background:#111A27; border-right:1px solid var(--line); }
+          [data-testid="stSidebarUserContent"] { padding-top:1.2rem; }
+          [data-testid="stSidebar"] [data-testid="stAlert"] { padding:.65rem; background:#19283A; }
+          [data-testid="stSidebar"] [data-testid="stAlert"] p { font-size:.76rem; line-height:1.5; }
+          [data-testid="stSidebarNavLink"] { border-radius:8px; }
           h1,h2,h3 { color:var(--ink); letter-spacing:-.035em; }
-          h1 { font-size:1.9rem !important; font-weight:720 !important; margin:.15rem 0 .25rem !important; }
-          h2 { font-size:1.18rem !important; font-weight:680 !important; }
-          h3 { font-size:1rem !important; font-weight:680 !important; }
-          p,label { color:#C4CDE0; }
+          h1 { font-size:2rem !important; font-weight:650 !important; margin:0 !important; padding:.2rem 0 .25rem !important; }
+          h2 { font-size:1.2rem !important; font-weight:650 !important; }
+          h3 { font-size:1.05rem !important; font-weight:620 !important; padding:.1rem 0 !important; }
+          p,label { color:#C6D0DF; }
+          [data-testid="stCaptionContainer"] p { color:var(--muted); line-height:1.55; }
           [data-testid="stMetric"] {
-            background:linear-gradient(145deg,#1A2337,#151C2C); border:1px solid #303D58;
-            border-radius:12px; padding:13px 17px; min-height:100px;
-            box-shadow:0 5px 18px rgba(0,0,0,.18);
+            background:var(--surface); border:1px solid var(--line);
+            border-radius:10px; padding:1rem 1.15rem; min-height:105px;
           }
-          [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(1) [data-testid="stMetric"] { border-top:3px solid #8290FF; }
-          [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(2) [data-testid="stMetric"] { border-top:3px solid #46D7CF; }
-          [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(3) [data-testid="stMetric"] { border-top:3px solid #F4B84A; }
-          [data-testid="stHorizontalBlock"] > [data-testid="column"]:nth-child(4) [data-testid="stMetric"] { border-top:3px solid #F27691; }
           [data-testid="stMetricLabel"] { color:var(--muted); font-size:.78rem; }
-          [data-testid="stMetricValue"] { color:#F5F7FF; font-weight:760; }
-          [data-testid="stVerticalBlockBorderWrapper"] {
-            background:#151C2B; border-color:var(--line); border-radius:12px;
-            box-shadow:0 5px 18px rgba(0,0,0,.16);
-          }
-          [data-testid="stDataFrame"] { border:1px solid var(--line); border-radius:9px; overflow:hidden; }
+          [data-testid="stMetricValue"] { color:var(--ink); font-size:1.9rem; font-weight:650; letter-spacing:-.04em; }
+          [data-testid="stVerticalBlockBorderWrapper"] { border-color:var(--line) !important; border-radius:12px; }
+          [data-testid="stVerticalBlockBorderWrapper"] > [data-testid="stVerticalBlock"] { padding:.25rem; }
+          [data-testid="stDataFrame"] { border:1px solid var(--line); border-radius:8px; overflow:hidden; }
+          [data-testid="stSelectbox"] [data-baseweb="select"] > div { border-radius:8px; background:#182231; border-color:#334155; }
+          [data-testid="stWidgetLabel"] p { font-size:.8rem; font-weight:550; color:#B6C3D5; }
           div.stButton > button, div.stFormSubmitButton > button {
-            background:#6675EA; color:#fff; border:1px solid #7885F2;
-            border-radius:8px; min-height:2.45rem; font-weight:680;
+            background:#21324C; color:#E8EDF5; border:1px solid #3A506F;
+            border-radius:8px; min-height:2.55rem; font-weight:600;
           }
-          div.stButton > button:hover, div.stFormSubmitButton > button:hover {
-            background:#7885F2; color:#fff; border-color:#8D98FF;
+          div.stButton > button p { color:inherit; font-size:.85rem; }
+          div.stButton > button:hover { background:#2A4060; color:#fff; border-color:#82A7FF; }
+          div.stButton > button[kind="primary"] { background:#88B1FF; color:#101B2C; border-color:#88B1FF; }
+          div.stButton > button:focus-visible { outline:2px solid #88B1FF; outline-offset:3px; }
+          .page-meta { display:flex; justify-content:space-between; align-items:center; gap:1rem; }
+          .eyebrow { color:#8FA8C7; font-size:.68rem; font-weight:650; letter-spacing:.13em; }
+          .subcopy { color:var(--muted); font-size:.92rem; line-height:1.6; margin:0; }
+          .brand { color:#F0F4FA; font-size:1.02rem; font-weight:650; letter-spacing:-.025em; }
+          .brand-mark { color:var(--cyan); }
+          .pill { display:inline-block; border:1px solid #34475B; color:#AABCD2;
+            background:#172334; border-radius:999px; padding:.25rem .6rem;
+            font-size:.62rem; font-weight:600; letter-spacing:.06em; white-space:nowrap; }
+          .status-risk { color:#E3BC76; background:#302A21; border:1px solid #57472E;
+            border-radius:5px; padding:.25rem .5rem; font-size:.74rem; font-weight:650; white-space:nowrap; }
+          .impact-hero { background:#24231F; border:1px solid #514735;
+            border-left:3px solid #D8AE65; border-radius:10px; padding:1.1rem 1.25rem; margin-bottom:.65rem; }
+          .impact-value { color:#F0D7A6; font-size:1.85rem; line-height:1.25; font-weight:650; letter-spacing:-.035em; margin:.3rem 0 .5rem; }
+          .impact-label { color:#D7B77E; font-size:.66rem; font-weight:650; text-transform:uppercase; letter-spacing:.1em; }
+          .impact-detail { color:#C7BFAF; font-size:.83rem; line-height:1.65; }
+          .action-card { display:flex; align-items:flex-start; gap:.8rem; background:#14241F;
+            border:1px solid #29463D; border-radius:8px; padding:.85rem 1rem; color:#C0D9D0; font-size:.88rem; line-height:1.65; margin-bottom:.35rem; }
+          .action-card .status-risk { color:#A5DDCC; background:#203930; border-color:#355346; }
+          .allocation-track { display:flex; height:34px; overflow:hidden; border-radius:6px; background:#253143; margin:.45rem 0; }
+          .allocation-covered { background:#547DA7; color:#fff; display:flex; align-items:center; justify-content:center; font-size:.73rem; font-weight:600; white-space:nowrap; }
+          .allocation-short { background:#D4AF6F; color:#282218; display:flex; align-items:center; justify-content:center; font-size:.73rem; font-weight:650; white-space:nowrap; }
+          .timeline { display:flex; align-items:center; gap:.65rem; color:#9BAFC7; font-size:.69rem; flex-wrap:wrap; }
+          .timeline-line { flex:1; min-width:20px; height:2px; background:#42526A; }
+          hr { border-color:var(--line); margin:1rem 0; }
+          @media (max-width:640px) {
+            [data-testid="stMainBlockContainer"] { padding:3.5rem 1rem 2rem; }
+            h1 { font-size:1.65rem !important; }
+            .page-meta { flex-wrap:wrap; gap:.5rem; }
+            .eyebrow { font-size:.61rem; }
+            .subcopy { font-size:.85rem; }
+            .st-key-overview_metrics [data-testid="stHorizontalBlock"],
+            .st-key-analysis_metrics [data-testid="stHorizontalBlock"] {
+              display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:.65rem;
+            }
+            .st-key-overview_metrics [data-testid="stColumn"],
+            .st-key-analysis_metrics [data-testid="stColumn"] { width:100% !important; min-width:0 !important; }
+            [data-testid="stMetric"] { min-height:90px; padding:.8rem; }
+            [data-testid="stMetricValue"] { font-size:1.55rem; }
+            [data-testid="stMetricLabel"] p { font-size:.72rem; white-space:normal; overflow:visible; text-overflow:clip; }
+            .st-key-analysis_metrics [data-testid="stHorizontalBlock"] { grid-template-columns:repeat(3,minmax(0,1fr)); }
+            .st-key-analysis_metrics [data-testid="stMetric"] { padding:.7rem .6rem; }
+            .st-key-analysis_metrics [data-testid="stMetricValue"] { font-size:1.15rem; }
+            .impact-hero { padding:.9rem 1rem; }
+            .impact-value { font-size:1.55rem; }
+            .impact-detail { font-size:.78rem; }
+            .action-card { padding:.8rem; gap:.65rem; }
           }
-          .eyebrow { color:#9AA6FF; font-size:.7rem; font-weight:750; letter-spacing:.12em; }
-          .subcopy { color:var(--muted); font-size:.92rem; margin:.1rem 0 0; }
-          .brand { color:#F1F4FF; font-size:1.02rem; font-weight:750; letter-spacing:-.02em; }
-          .brand-mark { color:#8290FF; }
-          .pill { display:inline-block; border:1px solid #394574; color:#B7C0FF;
-            background:#202943; border-radius:999px; padding:.3rem .64rem;
-            font-size:.68rem; font-weight:750; letter-spacing:.05em; }
-          .status-risk { color:#FFD27A; background:#352B1A; border:1px solid #70582C;
-            border-radius:999px; padding:.24rem .55rem; font-size:.7rem; font-weight:750; }
-          .quiet { color:var(--muted); font-size:.8rem; }
-          .impact-hero { background:linear-gradient(120deg,#2C271D,#202235); border:1px solid #6B572F;
-            border-left:5px solid #F4B84A; border-radius:12px; padding:1rem 1.15rem; }
-          .impact-value { color:#FFD166; font-size:2rem; line-height:1.05; font-weight:850; letter-spacing:-.04em; }
-          .impact-label { color:#F5C96F; font-size:.72rem; font-weight:750; text-transform:uppercase; letter-spacing:.08em; }
-          .ai-card { background:#1A2036; border:1px solid #3A426A; border-radius:12px; padding:.9rem 1rem; }
-          .allocation-track { display:flex; height:38px; overflow:hidden; border-radius:8px; background:#252D40; margin:.65rem 0; }
-          .allocation-covered { background:#586CE0; color:#fff; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:750; white-space:nowrap; }
-          .allocation-short { background:#F4B84A; color:#382507; display:flex; align-items:center; justify-content:center; font-size:.75rem; font-weight:800; white-space:nowrap; }
-          .timeline { display:flex; align-items:center; gap:.75rem; color:#C1CBE0; font-size:.76rem; }
-          .timeline-line { flex:1; height:4px; background:linear-gradient(90deg,#F4B84A 0 50%,#586CE0 50% 100%); border-radius:4px; }
-          hr { border-color:var(--line); }
         </style>
         """,
         unsafe_allow_html=True,
@@ -123,13 +154,12 @@ def apply_visual_theme():
 
 
 def page_heading(eyebrow, title, subtitle, as_of=None):
-    left, right = st.columns([5, 1])
-    with left:
-        st.markdown(f'<div class="eyebrow">{eyebrow}</div>', unsafe_allow_html=True)
-        st.title(title)
-        st.markdown(f'<div class="subcopy">{subtitle}</div>', unsafe_allow_html=True)
-    with right:
-        st.markdown('<div class="pill">SYNTHETIC DATA</div>', unsafe_allow_html=True)
+    st.markdown(
+        f'<div class="page-meta"><span class="eyebrow">{eyebrow}</span>'
+        '<span class="pill">SYNTHETIC DATA</span></div>', unsafe_allow_html=True,
+    )
+    st.title(title)
+    st.markdown(f'<div class="subcopy">{subtitle}</div>', unsafe_allow_html=True)
     if as_of:
         st.caption(f"Scenario snapshot · {as_of}")
 
