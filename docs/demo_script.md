@@ -1,7 +1,7 @@
 # Three-minute walkthrough
 
 [Watch the animated offline walkthrough](images/offline-walkthrough.gif). This
-22-second GIF holds five screenshots captured from real local app interactions;
+26-second GIF holds six screenshots captured from real local app interactions;
 it has no audio and does not demonstrate a generated AI response.
 
 1. **0:00–0:30** Open the live demo or run `python scripts/run_offline_demo.py`.
@@ -31,3 +31,11 @@ S-106 (multiple orders), and S-105 (no shortage); inspect both commentary and fa
 then record a short clip labeled “Real AI commentary — private run” with date/model.
 Do not label an offline walkthrough or mocked response as a real AI run. No paid
 calls, cloud changes, or credential reads are needed for the offline checks.
+
+## Shortlist variation
+
+The default selector contains only S-104, S-105, S-150, S-106, and S-108.
+Use S-150 for a small eight-unit shortage with standard review, and S-108 for
+zero inventory and three exposed orders (58 units). S-104 is selected first.
+Labels and overview metrics follow the selected records; Show full dataset
+restores the original 50-shipment portfolio without changing any records.

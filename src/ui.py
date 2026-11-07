@@ -8,6 +8,35 @@ from src.database import database_counts
 from src.supplychain import calculate_at_risk_orders, read_csv
 
 
+# A small tour of distinct existing scenarios; the underlying seed remains intact.
+DEMO_SHIPMENT_IDS = ("S-104", "S-105", "S-150", "S-106", "S-108")
+
+
+def demo_shipments(rows, show_all=False):
+    """Select the demo tour without modifying operational records."""
+    if show_all:
+        return rows
+    by_id = {row["shipment_id"]: row for row in rows}
+    selected = [by_id[sid] for sid in DEMO_SHIPMENT_IDS if sid in by_id]
+    # Custom databases may not contain any of the bundled demo IDs.
+    return selected or rows
+
+
+def shipment_option_label(shipment, risk_count, short_units, on_hand):
+    if not risk_count:
+        scenario = "Covered"
+    elif on_hand == 0:
+        scenario = "No stock"
+    elif risk_count > 1:
+        scenario = "Multiple orders"
+    elif short_units > 10:
+        scenario = "Same-day review"
+    else:
+        scenario = "Small shortage"
+    return (f"{shipment['shipment_id']} · {scenario} · "
+            f"{risk_count} at risk / {short_units} short")
+
+
 def load_workspace():
     shipments = read_csv("shipments.csv")
     inventory = read_csv("inventory.csv")

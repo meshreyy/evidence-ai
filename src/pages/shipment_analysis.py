@@ -9,10 +9,11 @@ import streamlit as st
 from src.ai_explainer import explain_impact_with_openai
 from src.documents import search_documents
 from src.openai_agent import execute_tool
-from src.supplychain import read_csv
-from src.ui import get_openai_api_key, page_heading
+from src.supplychain import calculate_at_risk_orders, read_csv
+from src.ui import demo_shipments, get_openai_api_key, page_heading, shipment_option_label
 
-shipments = read_csv("shipments.csv")
+all_shipments = read_csv("shipments.csv")
+shipments = demo_shipments(all_shipments, st.session_state.get("show_full_dataset", False))
 shipment_by_id = {row["shipment_id"]: row for row in shipments}
 inventory = read_csv("inventory.csv")
 inventory_by_item = {row["item_id"]: int(row["available_qty"]) for row in inventory}
@@ -29,6 +30,11 @@ if not shipments:
     st.code("python scripts/build_database.py")
     st.stop()
 
+orders = read_csv("orders.csv")
+risks_by_id = {row["shipment_id"]: calculate_at_risk_orders(row, inventory, orders) for row in shipments}
+st.caption(f"{len(shipments)} scenarios · labels reflect the current inventory and order records")
+if st.session_state.get("selected_shipment") not in shipment_by_id:
+    st.session_state["selected_shipment"] = next(iter(shipment_by_id))
 requested = st.session_state.pop("requested_shipment", None)
 if requested in shipment_by_id:
     st.session_state["selected_shipment"] = requested
@@ -36,12 +42,14 @@ selected_id = st.selectbox(
     "Select shipment",
     list(shipment_by_id),
     key="selected_shipment",
-    format_func=lambda shipment_id: (
-        f"{shipment_id}  ·  {shipment_by_id[shipment_id]['item_id']}  ·  "
-        f"{shipment_by_id[shipment_id]['item_name']}"
+    format_func=lambda sid: shipment_option_label(
+        shipment_by_id[sid], len(risks_by_id[sid]),
+        sum(row["qty_uncovered"] for row in risks_by_id[sid]),
+        inventory_by_item.get(shipment_by_id[sid]["item_id"], 0),
     ),
 )
 shipment = shipment_by_id[selected_id]
+st.caption(f"{shipment['item_id']} · {shipment['item_name']}")
 impact = execute_tool("check_shipment_impact", {"shipment_id": selected_id})
 risks = impact["at_risk_orders"]
 units_uncovered = sum(row["qty_uncovered"] for row in risks)

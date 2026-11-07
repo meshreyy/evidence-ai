@@ -8,7 +8,7 @@ order lines, and 12 demo accounts. No private or real-company data is used.
 [Live demo](https://supplychain-copilot-252e.onrender.com/) · [Three-minute walkthrough](docs/demo_script.md)
 
 [Animated offline walkthrough (GIF)](docs/images/offline-walkthrough.gif) —
-22 seconds covering Overview, S-104 allocation, S-105, and S-106. Five captured
+26 seconds covering Overview and all five default scenarios. Six captured
 app states; synthetic data; no AI generation or paid calls.
 
 [Local verification and remaining release work](docs/release_status.md)
@@ -17,6 +17,23 @@ app states; synthetic data; no AI generation or paid calls.
 
 Decision support with optional AI commentary: Python owns allocation, shortages, and
 policy actions so the results stay inspectable when generation is unavailable.
+
+## Five-scenario demo tour
+
+The UI defaults to a short list, with labels computed from current records:
+
+| Shipment | Scenario | At-risk orders | Uncovered units |
+| --- | --- | ---: | ---: |
+| S-104 | Earlier-order allocation; same-day review | 1 | 15 |
+| S-105 | Inventory covers every due order | 0 | 0 |
+| S-150 | Small shortage; standard analyst review | 1 | 8 |
+| S-106 | Several affected orders with partial stock | 3 | 53 |
+| S-108 | No available stock | 3 | 58 |
+
+Overview totals follow this selection: 5 shipments, 4 with exposure, 8 at-risk
+orders, and 134 uncovered units. **Show full dataset** in the sidebar restores
+all 50 shipments and the original portfolio totals. The underlying seed records,
+golden cases, and deterministic allocation rules are unchanged.
 
 ## Try it without Firebase
 

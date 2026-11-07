@@ -54,6 +54,8 @@ with st.sidebar:
     if OFFLINE_DEMO:
         st.info("Offline demo · seeded in-memory data · no Firebase connection")
     st.divider()
+    st.toggle("Show full dataset", key="show_full_dataset", value=False)
+    st.caption("Five varied scenarios by default. Enable to explore every shipment.")
     st.markdown("**Workspace data**")
     st.caption(
         f"{counts['shipments']} shipments · {counts['items']} SKUs\n\n"

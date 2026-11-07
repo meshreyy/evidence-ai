@@ -39,6 +39,37 @@ class ReliabilityTest(unittest.TestCase):
         self.assertIn('53 units uncovered across 3 orders', text)
         self.assertIn('O-209 · 13 units short', text)
 
+    def test_shortlist_is_small_and_has_distinct_scenarios(self):
+        app = self.page()
+        self.assertEqual(app.selectbox[0].value, 'S-104')
+        self.assertEqual(len(app.selectbox[0].options), 5)
+        for sid, count, units in [('S-104', 1, 15), ('S-105', 0, 0), ('S-150', 1, 8),
+                                  ('S-106', 3, 53), ('S-108', 3, 58)]:
+            with self.subTest(shipment=sid):
+                app.selectbox[0].select(sid).run(timeout=30)
+                self.assertFalse(list(app.exception))
+                self.assertEqual(app.metric[0].value, str(count))
+                impact = execute_tool('check_shipment_impact', {'shipment_id': sid})
+                self.assertEqual(sum(row['qty_uncovered'] for row in impact['at_risk_orders']), units)
+        app.toggle[0].set_value(True).run(timeout=30)
+        self.assertEqual(len(app.selectbox[0].options), 50)
+        app.selectbox[0].select('S-109').run(timeout=30)
+        app.toggle[0].set_value(False).run(timeout=30)
+        self.assertFalse(list(app.exception))
+        self.assertEqual(app.selectbox[0].value, 'S-104')
+
+    def test_overview_metrics_match_shortlist_and_full_view(self):
+        app = self.page(False)
+        metrics = {m.label: m.value for m in app.metric}
+        self.assertEqual(metrics['Inbound shipments'], '5')
+        self.assertEqual(metrics['Orders at risk'], '8')
+        self.assertEqual(metrics['Units uncovered'], '134')
+        app.toggle[0].set_value(True).run(timeout=30)
+        metrics = {m.label: m.value for m in app.metric}
+        self.assertEqual(metrics['Inbound shipments'], '50')
+        self.assertEqual(metrics['Orders at risk'], '67')
+        self.assertEqual(metrics['Units uncovered'], '1,046')
+
     def test_priority_is_per_order_and_boundary_is_strict(self):
         for shorts, expected in [([6, 6], ['analyst_review'] * 2), ([10], ['analyst_review']), ([11], ['same_day_review'])]:
             allocation = [{'order_id': f'O-{i}', 'qty_uncovered': n} for i, n in enumerate(shorts)]
@@ -77,11 +108,11 @@ class ReliabilityTest(unittest.TestCase):
         with patch.dict('os.environ', {"SUPPLYCHAIN_DEMO_MODE": "1"}):
             database.set_firestore_client_for_testing(None)
             app = self.page(False)
-            self.assertEqual(app.metric[0].value, '50')
+            self.assertEqual(app.metric[0].value, '5')
             database.set_firestore_client_for_testing(None)
             app.run(timeout=30)
             self.assertFalse(list(app.exception))
-            self.assertEqual(app.metric[0].value, '50')
+            self.assertEqual(app.metric[0].value, '5')
             self.assertTrue(any('Offline demo' in row.value for row in app.info))
 
     def test_empty_database_both_entry_points(self):

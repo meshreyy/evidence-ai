@@ -25,7 +25,7 @@ All listed application fixes are implemented and covered by offline regressions:
 | Disconnected overview | Open shipment analysis transfers the selected shipment through session state. |
 
 A README screenshot, animated offline walkthrough, credential-free demo launcher,
-and minimal offline CI workflow are included. The walkthrough holds five actual
+and minimal offline CI workflow are included. The walkthrough holds six actual
 app screenshots; it is not a real AI generation recording. The stack and scope
 remain Streamlit, Firestore, BM25, and deterministic Python calculations.
 
@@ -38,7 +38,7 @@ allocation table (including covered orders and customer details), a separate AI
 commentary panel, and quieter deterministic action cards. Phone layouts keep
 overview metrics in a two-by-two grid and investigation metrics in one row.
 Checked at 1440px desktop and 390px phone widths; no page-level horizontal
-overflow. The README screenshots and five-state offline walkthrough were refreshed.
+overflow. The README screenshots and six-state offline walkthrough were refreshed.
 The existing 46 tests and all seven deterministic evaluations pass.
 
 ## Remaining public release checks
@@ -61,3 +61,13 @@ The application fixes were pushed to `main` in commit `2e3473b`. This audit and
 walkthrough are a follow-up documentation change. Production deployment state,
 credential changes, and live database contents have not been verified by these
 local checks.
+
+## Compact scenario selection
+
+The default UI now shows five existing synthetic examples, ordered to demonstrate
+allocation, covered stock, a small shortage, multiple affected orders, and a
+stockout. Live computed labels display risk counts and shortages. Both pages use
+the same shortlist, and overview metrics are scoped to it (5 shipments, 8 exposed
+orders, 134 units uncovered). Show full dataset restores the original 50-shipment
+portfolio. No seed data or cloud records were modified. All 48 offline tests and
+seven deterministic evaluations pass.

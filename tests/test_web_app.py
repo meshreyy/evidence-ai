@@ -18,9 +18,9 @@ class SupplyChainDashboardTest(unittest.TestCase):
         self.assertIn('base = "dark"', (Path(__file__).resolve().parents[1] / ".streamlit/config.toml").read_text())
         self.assertEqual([title.value for title in app.title], ["Inbound supply overview"])
         metrics = {metric.label: metric.value for metric in app.metric}
-        self.assertEqual(metrics["Inbound shipments"], "50")
-        self.assertEqual(metrics["Shipments with exposure"], "31")
-        self.assertEqual(metrics["Units uncovered"], "1,046")
+        self.assertEqual(metrics["Inbound shipments"], "5")
+        self.assertEqual(metrics["Shipments with exposure"], "4")
+        self.assertEqual(metrics["Units uncovered"], "134")
         self.assertTrue(app.dataframe)
 
     @patch("openai.OpenAI")

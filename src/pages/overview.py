@@ -2,15 +2,20 @@
 import pandas as pd
 import streamlit as st
 
-from src.ui import load_workspace, page_heading
+from src.ui import demo_shipments, load_workspace, page_heading, shipment_option_label
 
 counts, shipments, exposed_orders, as_of = load_workspace()
+shipments = demo_shipments(shipments, st.session_state.get("show_full_dataset", False))
+visible_ids = {row["shipment_id"] for row in shipments}
+exposed_orders = [row for row in exposed_orders if row["shipment_id"] in visible_ids]
+summary_by_id = {row["shipment_id"]: row for row in shipments}
 page_heading(
     "CONTROL TOWER / OVERVIEW",
     "Inbound supply overview",
     "A live view of shipment exposure, order risk, and where to focus first.",
     as_of,
 )
+st.caption(f"Showing {len(shipments)} scenarios · {counts['shipments']} shipments available in the full dataset")
 
 at_risk_shipments = [row for row in shipments if row["units_uncovered"] > 0]
 units_uncovered = sum(row["units_uncovered"] for row in at_risk_shipments)
@@ -18,7 +23,7 @@ orders_at_risk = sum(row["at_risk_orders"] for row in at_risk_shipments)
 
 with st.container(key="overview_metrics"):
     m1, m2, m3, m4 = st.columns(4)
-    m1.metric("Inbound shipments", counts["shipments"], help="Synthetic delayed-shipment scenarios")
+    m1.metric("Inbound shipments", len(shipments), help="Shipments in the selected scenario list")
     m2.metric("Shipments with exposure", len(at_risk_shipments))
     m3.metric("Orders at risk", orders_at_risk)
     m4.metric("Units uncovered", f"{units_uncovered:,}")
@@ -38,7 +43,7 @@ with left, st.container(border=True):
             for row in chart_rows
         ]).set_index("Shipment · SKU")
         st.bar_chart(chart, color="#62BBA6", horizontal=True, height=340, x_label="Uncovered units", y_label="", sort=False)
-        st.caption("The 10 highest-exposure shipments · current stock allocated before arrival.")
+        st.caption("Selected shipments with uncovered demand · highest exposure first.")
     else:
         st.success("No order exposure in the current scenario records.")
 
@@ -59,13 +64,19 @@ with right, st.container(border=True):
         st.success("No customer orders currently show a shortfall.")
 
     if shipments:
-        chosen = st.selectbox("Open shipment", [row["shipment_id"] for row in shipments])
+        chosen = st.selectbox(
+            "Open shipment", list(summary_by_id),
+            format_func=lambda sid: shipment_option_label(
+                summary_by_id[sid], summary_by_id[sid]["at_risk_orders"],
+                summary_by_id[sid]["units_uncovered"], summary_by_id[sid]["on_hand"],
+            ),
+        )
         if st.button("Open shipment analysis", width="stretch", type="primary"):
             st.session_state["requested_shipment"] = chosen
             st.switch_page("pages/shipment_analysis.py")
 
 st.markdown("### Shipment register")
-st.caption(f"Arrival windows and calculated exposure across all {counts['shipments']} inbound scenarios")
+st.caption(f"Arrival windows and calculated exposure across these {len(shipments)} selected scenarios")
 register_rows = [{
     "Shipment": row["shipment_id"],
     "Item": row["item_id"],
