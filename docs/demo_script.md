@@ -1,5 +1,9 @@
 # Three-minute walkthrough
 
+[Watch the animated offline walkthrough](images/offline-walkthrough.gif). This
+22-second GIF holds five screenshots captured from real local app interactions;
+it has no audio and does not demonstrate a generated AI response.
+
 1. **0:00–0:30** Open the live demo or run `python scripts/run_offline_demo.py`.
    Explain: 50 synthetic shipments, 50 SKUs, 248 order lines, 12 demo accounts.
    The offline launcher uses an ephemeral fake; the deployed app uses Firestore.

@@ -7,6 +7,10 @@ order lines, and 12 demo accounts. No private or real-company data is used.
 
 [Live demo](https://supplychain-copilot-252e.onrender.com/) · [Three-minute walkthrough](docs/demo_script.md)
 
+[Animated offline walkthrough (GIF)](docs/images/offline-walkthrough.gif) —
+22 seconds covering Overview, S-104 allocation, S-105, and S-106. Five captured
+app states; synthetic data; no AI generation or paid calls.
+
 [Local verification and remaining release work](docs/release_status.md)
 
 ![Shipment analysis showing verified totals and allocation](docs/images/shipment-analysis.png)
