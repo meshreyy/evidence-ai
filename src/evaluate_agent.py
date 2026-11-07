@@ -3,7 +3,8 @@ import json
 import os
 from pathlib import Path
 
-from src.openai_agent import answer_with_openai, deterministic_preflight
+from src.openai_agent import answer_with_openai, deterministic_preflight, execute_tool
+from src.ai_explainer import validate_brief
 
 ROOT = Path(__file__).resolve().parents[1]
 CASES_PATH = ROOT / "evals" / "agent_cases.json"
@@ -11,6 +12,24 @@ RESULTS_PATH = ROOT / "evals" / "latest_agent_results.json"
 
 
 def grade_answer(answer, case):
+    if case["expected_mode"] == "openai_explanation":
+        import re
+        shipment_id = re.search(r"S-\d+", case["question"]).group()
+        shipment = execute_tool("get_shipment_details", {"shipment_id": shipment_id})
+        impact = execute_tool("check_shipment_impact", {"shipment_id": shipment_id})
+        try:
+            if isinstance(answer, str):
+                payload = json.loads(answer.split("VERIFIED_JSON: ", 1)[1])
+                # Check actual commentary as well as the structured evidence trailer.
+                commentary = answer.split("AI commentary:\n", 1)[1].split("Evidence:", 1)[0]
+                payload.update(headline=commentary, summary="Commentary", analyst_focus="Review verified actions", limitation="Synthetic data")
+            else:
+                payload = answer
+            validate_brief(payload, shipment, impact)
+            passed = True
+        except (ValueError, TypeError, KeyError, IndexError):
+            passed = False
+        return {"passed": passed, "checks": [{"check": "structured facts, actions and commentary", "passed": passed}]}
     normalized = answer.lower()
     checks = []
     for phrase in case.get("must_contain", []):

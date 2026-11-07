@@ -1,6 +1,7 @@
 """Focused visual investigation for one selected inbound shipment."""
 from datetime import date
 import os
+import json
 
 import pandas as pd
 import streamlit as st
@@ -23,9 +24,18 @@ page_heading(
     "Identify what is short, when it is due, and why the analyst should care.",
     as_of,
 )
+if not shipments:
+    st.info("No shipment data found. Seed the demo database to analyze shipments.")
+    st.code("python scripts/build_database.py")
+    st.stop()
+
+requested = st.session_state.pop("requested_shipment", None)
+if requested in shipment_by_id:
+    st.session_state["selected_shipment"] = requested
 selected_id = st.selectbox(
     "Select shipment",
     list(shipment_by_id),
+    key="selected_shipment",
     format_func=lambda shipment_id: (
         f"{shipment_id}  ·  {shipment_by_id[shipment_id]['item_id']}  ·  "
         f"{shipment_by_id[shipment_id]['item_name']}"
@@ -42,12 +52,12 @@ if risks:
         date.fromisoformat(shipment["expected_arrival_date"])
         - date.fromisoformat(first["due_date"])
     ).days
-    severity = "HIGH PRIORITY" if units_uncovered > 10 else "ANALYST REVIEW"
+    severity = "HIGH PRIORITY" if any(action["action_id"] == "same_day_review" for action in impact["allowed_next_steps"]) else "ANALYST REVIEW"
     st.markdown(
         f"""<div class="impact-hero">
-          <div class="impact-label">{severity} &nbsp;·&nbsp; {first['order_id']} / {first['customer']}</div>
-          <div class="impact-value">{units_uncovered:,} units uncovered</div>
-          <div>Order due {first['due_date']} · shipment arrives {shipment['expected_arrival_date']} · {gap_days} days later</div>
+          <div class="impact-label">{severity} &nbsp;·&nbsp; {selected_id}</div>
+          <div class="impact-value">{units_uncovered:,} units uncovered across {len(risks)} {"order" if len(risks) == 1 else "orders"}</div>
+          <div>First exposed order {first['order_id']}: {first['qty_uncovered']} units short · due {first['due_date']} · shipment arrives {shipment['expected_arrival_date']} · {gap_days} days later</div>
         </div>""",
         unsafe_allow_html=True,
     )
@@ -62,6 +72,12 @@ m3.metric("Shipment quantity", f"{int(shipment['qty']):,} units")
 left, right = st.columns([1.25, 1], gap="medium")
 with left, st.container(border=True):
     st.markdown("### Order impact")
+    st.caption("Allocation includes fully covered orders, in due-date / priority / order-ID sequence.")
+    st.dataframe(pd.DataFrame([{
+        "Order": row["order_id"], "Needed": row["qty_needed"],
+        "Allocated": row["qty_covered"], "Short": row["qty_uncovered"],
+        "Due": row["due_date"],
+    } for row in impact["allocation"]]), width="stretch", hide_index=True)
     if risks:
         st.caption("Available inventory is allocated by due date, then priority.")
         focus = risks[0]
@@ -99,11 +115,19 @@ with left, st.container(border=True):
 api_key = get_openai_api_key()
 policy_results = search_documents("shortage above 10 units same-day analyst review", limit=1)
 policy_text = policy_results[0]["text"] if policy_results else "No policy passage was retrieved."
-state_key = f"ai_explanation_{selected_id}"
+state_key = "ai_explanation"
+snapshot = json.dumps({"shipment": shipment, "impact": impact, "policy": policy_text}, sort_keys=True)
+if st.session_state.get("ai_input_snapshot") != snapshot:
+    st.session_state.pop(state_key, None)
+    st.session_state["ai_input_snapshot"] = snapshot
 with right, st.container(border=True):
     st.markdown('<div class="eyebrow">AI EXPLANATION</div>', unsafe_allow_html=True)
     st.markdown("### Why this matters")
-    st.caption("AI translates the verified calculation into a concise analyst brief.")
+    st.caption("Generated text is AI commentary. Verified quantities and actions are shown separately.")
+    if risks:
+        st.markdown(f"**Verified input:** {first['order_id']} · {first['qty_uncovered']} units short · due {first['due_date']}.")
+    else:
+        st.markdown("**Verified input:** no order shortfall before arrival.")
     if api_key:
         if st.button("Generate explanation", type="primary", key=f"generate_{selected_id}"):
             with st.spinner("Preparing a grounded explanation…"):
@@ -127,17 +151,9 @@ with right, st.container(border=True):
                 st.info(brief["analyst_focus"])
                 st.caption(f"Limit: {brief['limitation']} · Source: verified order data + synthetic playbook")
         else:
-            if risks:
-                st.markdown(f"**Verified input:** {first['order_id']} · {units_uncovered} units short · due {first['due_date']}.")
-            else:
-                st.markdown("**Verified input:** no order shortfall before arrival.")
             st.caption("Generate a brief to explain the timing, shortage, and policy-supported focus.")
     else:
-        if risks:
-            st.markdown(f"**Verified input:** {first['order_id']} · {units_uncovered} units short · due {first['due_date']}.")
-        else:
-            st.markdown("**Verified input:** no order shortfall before arrival.")
-        st.caption("Add a server-side OpenAI key to generate the explanation. No key is stored in the browser or repository.")
+        st.caption("Add a server-side OpenAI key and enable private live AI to generate the explanation. No key is stored in the browser or repository.")
 
 if risks:
     st.markdown("### Recommended analyst action")

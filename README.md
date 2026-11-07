@@ -5,9 +5,41 @@ inbound supply. It uses Firebase Cloud Firestore seeded from a reproducible, cle
 labeled synthetic dataset: 50 shipments, 50 SKUs, 50 inventory balances, 248 customer
 order lines, and 12 demo accounts. No private or real-company data is used.
 
-## Run
+[Live demo](https://supplychain-copilot-252e.onrender.com/) · [Three-minute walkthrough](docs/demo_script.md)
 
-Requires Python 3.9+. Before running the app, create a Firebase project, enable Cloud Firestore in Native mode, and configure a server-side service-account JSON path as described in [`docs/database_guide.md`](docs/database_guide.md). Keep that credential outside this repository. Install dependencies with:
+[Local verification and remaining release work](docs/release_status.md)
+
+![Shipment analysis showing verified totals and allocation](docs/images/shipment-analysis.png)
+
+Decision support with optional AI commentary: Python owns allocation, shortages, and
+policy actions so the results stay inspectable when generation is unavailable.
+
+## Try it without Firebase
+
+```bash
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python scripts/run_offline_demo.py
+```
+
+Open http://127.0.0.1:8501. This uses the same UI and a seeded, in-memory Firestore
+fake; it needs no cloud credentials and loses changes on restart. AI is disabled
+by default. All operational data is synthetic.
+
+```bash
+python -m unittest discover -s tests -v
+python -m src.evaluate --offline
+```
+
+CI runs these commands without credentials or paid calls. The original 34 tests
+plus focused regressions run locally; dependency versions are pinned in
+`requirements.txt`. Python 3.12.14 was tested fresh; Python 3.12 is the CI/deployment target (also tested on the
+existing local Python 3.9.6 environment).
+
+## Run with Firestore
+
+Requires Python 3.12 for the documented fresh environment. Before running the app, create a Firebase project, enable Cloud Firestore in Native mode, and configure a server-side service-account JSON path as described in [`docs/database_guide.md`](docs/database_guide.md). Keep that credential outside this repository. Install dependencies with:
 
 ```bash
 python3 -m venv .venv
@@ -24,11 +56,11 @@ python -m src.cli             # terminal interface
 streamlit run src/web_app.py  # visual interface
 ```
 
-Set `OPENAI_API_KEY` in the server environment or copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and add your own key. Never paste the key into source code, chat, or commit the real secrets file. The model only receives the selected shipment's deterministic result and relevant policy excerpt; it has no database tools and does not calculate or choose actions. Without a key, the overview and deterministic analysis still work, while the AI panel shows the verified context and explains how to enable model-generated commentary. Set `OPENAI_MODEL` to override `gpt-4o-mini`.
+For private live generation only, set `ENABLE_LIVE_AI=true` and `OPENAI_API_KEY` in the server environment or copy `.streamlit/secrets.toml.example` to `.streamlit/secrets.toml` and add your own key. Never paste the key into source code, chat, or commit the real secrets file. The model only receives the selected shipment's deterministic result and relevant policy excerpt; it has no database tools and does not calculate or choose actions. Without a key, the overview and deterministic analysis still work, while the AI panel shows the verified context and explains how to enable model-generated commentary. Set `OPENAI_MODEL` to override `gpt-4o-mini`.
 
 ## Deploy on Render
 
-This project is a Streamlit server, so Render is the direct deployment target. `render.yaml` contains its build, start, health-check, and Firebase settings. In Render, create a Blueprint from this GitHub repository, then add a **Secret File** containing the Firebase service-account JSON at `/etc/secrets/firebase-service-account.json`. Keep `FIREBASE_PROJECT_ID` set to `evidence-ai-e962b`; set `OPENAI_API_KEY` only if you want live AI explanations. Deploy and verify both pages and the `/_stcore/health` health check. The free Render service may sleep when idle.
+This project is a Streamlit server, so Render is the direct deployment target. `render.yaml` contains its build, start, health-check, and Firebase settings. In Render, create a Blueprint from this GitHub repository, then add a **Secret File** containing the Firebase service-account JSON at `/etc/secrets/firebase-service-account.json`. Keep `FIREBASE_PROJECT_ID` set to `evidence-ai-e962b`; leave `OPENAI_API_KEY` unset and `ENABLE_LIVE_AI=false` on the public service. The UI refuses generation unless live AI is explicitly enabled. Do not enable it publicly without a shared server-side request budget. Deploy and verify both pages and the `/_stcore/health` health check. The free Render service may sleep when idle.
 
 Vercel does not directly host this Streamlit server. To use Vercel, the UI would need a separate Next.js frontend on Vercel and a Python API on Render; that is a larger frontend/backend rewrite, not a second deployment of the current app.
 
@@ -69,3 +101,28 @@ Source-selection decisions and failed fetch checks are recorded in
   delay, status, or business impact. The BrightHome playbook is synthetic demo
   policy, not a real company procedure. Keep those source types distinct.
 - The language model is not trained or fine-tuned on the database. It receives the selected precomputed result only to explain it; deterministic Python code does the arithmetic and chooses permitted next steps. The separate document retrieval uses lexical BM25 with a small synonym map and can still miss paraphrases.
+
+## Verified output and AI limits
+
+The allocation rule is earliest due date, lower numeric priority, then order ID;
+orders due on arrival day are included conservatively. S-104 allocates 20 of 30
+units to O-201, leaving 10 for O-202 and a 15-unit shortfall. S-105 has no exposed
+orders. S-106 has 53 uncovered units across three orders; O-209 itself is short 13.
+An individual shortfall above 10 triggers same-day review; two six-unit shortages
+do not. The allocation table includes covered orders so the result is inspectable.
+
+Structured generated order IDs, shortages, action IDs, delay cause, and delivery
+promise are validated against deterministic ground truth before acceptance.
+AI text is labeled commentary, while verified values/actions render separately.
+Conservative prose checks reject several known contradictions and unsupported
+claims, but cannot prove arbitrary natural-language factual correctness. A failure
+case is a fabricated customs delay: no cause is recorded, so it is rejected rather
+than treated as shipment evidence. BM25 retrieval remains lexical and can miss
+paraphrases. No model grades another model.
+
+Public cost policy: keep live generation disabled and the public OpenAI key unset.
+The repository configuration disables UI generation even if a key exists. Verify
+actual Render settings before release; repository changes do not update a running
+service. For a real AI recording, privately enable generation and run single-order,
+multiple-order, and no-shortage paid checks. No real AI recording is bundled yet;
+do not present mocked/offline output as a real generated response.

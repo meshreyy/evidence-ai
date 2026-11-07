@@ -12,6 +12,9 @@ class AIExplainerTest(unittest.TestCase):
     @patch("openai.OpenAI")
     def test_model_receives_precomputed_result_without_tools(self, openai_client):
         brief_json = {
+            "orders": [{"order_id": "O-202", "qty_uncovered": 15}],
+            "actions": [{"order_id": "O-202", "action_id": "same_day_review"}],
+            "delay_cause": "not recorded", "delivery_promise": None,
             "headline": "O-202 needs same-day review",
             "summary": "O-202 is short 15 units before the shipment arrives.",
             "analyst_focus": "Flag O-202 for same-day analyst review.",

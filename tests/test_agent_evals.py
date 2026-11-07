@@ -38,9 +38,20 @@ class AgentAnswerEvalDefinitionTest(unittest.TestCase):
                 "orders. [data/shipments.csv]"
             ),
         }
+        from src.openai_agent import execute_tool
+        from src.ai_explainer import verified_fields
+        import re
         for case in cases:
             with self.subTest(case=case["id"]):
-                self.assertTrue(grade_answer(examples[case["id"]], case)["passed"])
+                if case["expected_mode"] == "openai_explanation":
+                    shipment_id = re.search(r"S-\d+", case["question"]).group()
+                    payload = verified_fields(execute_tool("get_shipment_details", {"shipment_id": shipment_id}),
+                                              execute_tool("check_shipment_impact", {"shipment_id": shipment_id}))
+                    payload.update(headline="Verified impact", summary="Review the verified results.",
+                                   analyst_focus="Use permitted review actions.", limitation="Synthetic data.")
+                    self.assertTrue(grade_answer(payload, case)["passed"])
+                else:
+                    self.assertTrue(grade_answer(examples[case["id"]], case)["passed"])
 
     def test_bad_answer_fails_required_fact_check(self):
         cases = json.loads(CASES_PATH.read_text(encoding="utf-8"))

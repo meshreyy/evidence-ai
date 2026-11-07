@@ -30,3 +30,14 @@ flowchart TD
 - The language model is not trained or fine-tuned on these records and cannot query them. It explains a bounded context supplied by application code; Python performs calculations and applies policy.
 - CBP pages provide general import guidance only. They do not establish a shipment's delay cause or business impact.
 - BM25 is a lexical ranker with a small explicit synonym map; it is not embedding-based semantic search.
+
+## Reliability boundaries
+
+The allocation loop returns all due orders; the established risk-only API filters
+that breakdown. The UI and tool use the same per-order policy action identifiers.
+AI briefs are invalidated by a serialized shipment/impact/policy snapshot.
+Structured response facts are checked exactly against deterministic ground truth;
+commentary has conservative regex checks for known quantity, cause and action
+failures. Those checks do not establish unrestricted prose factual correctness.
+Verified values and permitted actions remain deterministic and separately rendered.
+Public generation defaults off (`ENABLE_LIVE_AI=false`); private AI requires opt-in.

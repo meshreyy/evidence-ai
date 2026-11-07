@@ -53,6 +53,13 @@ def run_evaluations():
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--offline", action="store_true", help="Use only the seeded in-memory demo database")
+    if parser.parse_args().offline:
+        from tests.support import seeded_fake_firestore
+        from src.database import set_firestore_client_for_testing
+        set_firestore_client_for_testing(seeded_fake_firestore())
     report = run_evaluations()
     print(f"Deterministic evals: {report['passed']}/{report['total']} passed ({report['pass_rate']:.0%})")
     for row in report["results"]:

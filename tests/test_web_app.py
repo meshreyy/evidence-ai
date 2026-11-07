@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import unittest
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -11,10 +12,10 @@ import tests.support  # Installs the offline Firestore fake for AppTest.
 
 class SupplyChainDashboardTest(unittest.TestCase):
     def test_overview_shows_operational_metrics_and_risk_data(self):
-        app = AppTest.from_file("src/web_app.py").run(timeout=30)
+        app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "src/web_app.py")).run(timeout=30)
 
         self.assertFalse(list(app.exception))
-        self.assertEqual(st.get_option("theme.base"), "dark")
+        self.assertIn('base = "dark"', (Path(__file__).resolve().parents[1] / ".streamlit/config.toml").read_text())
         self.assertEqual([title.value for title in app.title], ["Inbound supply overview"])
         metrics = {metric.label: metric.value for metric in app.metric}
         self.assertEqual(metrics["Inbound shipments"], "50")
@@ -27,14 +28,17 @@ class SupplyChainDashboardTest(unittest.TestCase):
         client = openai_client.return_value
         client.chat.completions.create.return_value = SimpleNamespace(
             choices=[SimpleNamespace(message=SimpleNamespace(content=(
-                '{"headline":"O-202 needs review",'
+                '{"orders":[{"order_id":"O-202","qty_uncovered":15}],'
+                '"actions":[{"order_id":"O-202","action_id":"same_day_review"}],'
+                '"delay_cause":"not recorded","delivery_promise":null,'
+                '"headline":"O-202 needs review",'
                 '"summary":"O-202 is short 15 units before arrival.",'
                 '"analyst_focus":"Flag O-202 for same-day review.",'
                 '"limitation":"The delay cause is not recorded."}'
             )))]
         )
-        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key"}):
-            app = AppTest.from_file("src/web_app.py").run(timeout=30)
+        with patch.dict(os.environ, {"OPENAI_API_KEY": "test-key", "ENABLE_LIVE_AI": "true"}):
+            app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "src/web_app.py")).run(timeout=30)
             app.switch_page("pages/shipment_analysis.py").run(timeout=30)
             generate = next(button for button in app.button if button.label == "Generate explanation")
             self.assertFalse(generate.disabled)
@@ -45,7 +49,7 @@ class SupplyChainDashboardTest(unittest.TestCase):
         self.assertNotIn("tools", client.chat.completions.create.call_args.kwargs)
 
     def test_shipment_page_shows_order_level_evidence_and_next_step(self):
-        app = AppTest.from_file("src/web_app.py").run(timeout=30)
+        app = AppTest.from_file(str(Path(__file__).resolve().parents[1] / "src/web_app.py")).run(timeout=30)
         app.switch_page("pages/shipment_analysis.py").run(timeout=30)
 
         self.assertFalse(list(app.exception))

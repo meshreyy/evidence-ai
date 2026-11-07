@@ -42,3 +42,15 @@ The Firebase Admin SDK authenticates on the server; no service-account credentia
 The versioned `data/*.csv` files are the reproducible source records: 12 demo accounts, 248 orders, 50 items, 50 inventory balances, and 50 shipments. Regenerate them with `python scripts/generate_synthetic_data.py`, then rerun the Firestore seed command if you want the cloud records updated. `python -m unittest discover -s tests -v` uses an in-memory Firestore-compatible test double and does not contact Firebase or require credentials.
 
 All account and operational records are synthetic. Never use this prototype's generated records as real-company facts.
+
+## Seed validation and replacement safety
+
+All five seed CSVs are loaded and checked before any cloud deletion or write:
+required values, document IDs, duplicate IDs, numeric conversions, valid dates,
+non-negative inventory/cost, positive quantities/priorities, and item/customer
+references. Invalid input leaves existing collections untouched in both modes.
+Repeated seeding upserts stable IDs. `python scripts/build_database.py --replace`
+is explicitly destructive and deletes only `items`, `customers`, `shipments`,
+`inventory`, and `orders`. Other collections are not part of replacement.
+Prevalidation is not a transaction: multi-batch cloud replacement is not atomic;
+network/permission failures after validation can still leave partial data.

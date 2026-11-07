@@ -1,9 +1,10 @@
 """Deterministic tools and an explanation-only OpenAI integration."""
 import re
+import json
 
-from src.ai_explainer import explain_impact_with_openai
+from src.ai_explainer import explain_impact_with_openai, verified_fields
 from src.documents import search_documents
-from src.supplychain import find_at_risk_orders, read_csv
+from src.supplychain import calculate_order_allocation, read_csv
 
 MODEL = "gpt-4o-mini"
 SHIPMENT_ID_RE = re.compile(r"\b(S-\d+)\b", re.IGNORECASE)
@@ -17,22 +18,30 @@ UNSUPPORTED_ACTION_RE = re.compile(
 def execute_tool(name, arguments):
     """Allowlist read-only calculations and lookups; no model-supplied code runs."""
     if name == "check_shipment_impact":
-        rows = find_at_risk_orders(arguments["shipment_id"])
+        shipment = next((row for row in read_csv("shipments.csv")
+                         if row["shipment_id"] == arguments["shipment_id"]), None)
+        if shipment is None:
+            raise ValueError(f"Unknown shipment: {arguments['shipment_id']}")
+        allocation = calculate_order_allocation(shipment, read_csv("inventory.csv"), read_csv("orders.csv"))
+        rows = [row for row in allocation if row["qty_uncovered"] > 0]
         actions = []
         for row in rows:
+            high_priority = row["qty_uncovered"] > 10
             action = (
                 "Flag as high priority for same-day operations analyst review."
-                if row["qty_uncovered"] > 10
+                if high_priority
                 else "Flag for operations analyst review."
             )
             actions.append({
                 "order_id": row["order_id"],
                 "action": action,
+                "action_id": "same_day_review" if high_priority else "analyst_review",
                 "basis": "Synthetic BrightHome Demo Operations Playbook: shortages above 10 units receive same-day review; all uncovered orders are reviewed.",
                 "source": "synthetic://brighthome/operations-playbook",
             })
         return {
             "at_risk_orders": rows,
+            "allocation": allocation,
             "allowed_next_steps": actions,
             "prohibited_or_unsupported": [
                 "Do not recommend contacting customers or suppliers, expediting freight, or changing allocations: this demo has no records or policy supporting those actions."
@@ -149,10 +158,18 @@ def answer_with_openai(question, model=MODEL):
         shipment_result, impact, policy_text, model=model
     )
 
-    lines = [brief["headline"], brief["summary"]]
+    lines = ["Verified results:"]
+    for row in impact["at_risk_orders"]:
+        lines.append(f"{row['order_id']}: {row['qty_uncovered']} units uncovered; due {row['due_date']}.")
+    if not impact["at_risk_orders"]:
+        lines.append("No at-risk orders before arrival.")
+    for action in impact["allowed_next_steps"]:
+        lines.append(f"{action['order_id']}: {action['action']}")
+    lines.extend(["AI commentary:", brief["headline"], brief["summary"]])
     lines.append(f"Analyst focus: {brief['analyst_focus']}")
     lines.append(f"Limitation: {brief['limitation']}")
     sources = ", ".join(impact["data_sources"])
     lines.append(f"Evidence: {sources}; synthetic://brighthome/operations-playbook")
     lines.append("Unsupported actions: customer contact, supplier expediting, and delivery promises are not supported by this scenario.")
+    lines.append("VERIFIED_JSON: " + json.dumps(verified_fields(shipment_result, impact), sort_keys=True))
     return "\n".join(lines)

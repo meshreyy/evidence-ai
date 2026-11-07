@@ -1,4 +1,5 @@
 """Native two-page Streamlit application backed by Firebase Firestore."""
+import os
 import sys
 from pathlib import Path
 
@@ -11,6 +12,14 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.database import FirebaseConfigurationError, database_counts
 from src.ui import apply_visual_theme
+
+# Streamlit can unload imported modules after a source reload. Initialize the
+# explicitly requested offline data in the app run, rather than only at startup.
+OFFLINE_DEMO = os.getenv("SUPPLYCHAIN_DEMO_MODE") == "1"
+if OFFLINE_DEMO:
+    from tests.support import seeded_fake_firestore
+    from src.database import set_firestore_client_for_testing
+    set_firestore_client_for_testing(seeded_fake_firestore())
 
 st.set_page_config(
     page_title="SupplyChain Copilot",
@@ -31,12 +40,19 @@ except FirebaseConfigurationError as exc:
     )
     st.stop()
 
+if not counts["shipments"]:
+    st.info("No shipment data found. Seed the demo database before opening the workspace.")
+    st.code("python scripts/build_database.py")
+    st.stop()
+
 with st.sidebar:
     st.markdown(
         '<div class="brand"><span class="brand-mark">◈</span> SupplyChain Copilot</div>',
         unsafe_allow_html=True,
     )
     st.caption("OPERATIONS INTELLIGENCE")
+    if OFFLINE_DEMO:
+        st.info("Offline demo · seeded in-memory data · no Firebase connection")
     st.divider()
     st.markdown("**Workspace data**")
     st.caption(

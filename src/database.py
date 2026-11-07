@@ -1,6 +1,8 @@
 """Firebase Firestore access and reproducible synthetic-data seeding."""
 import csv
 import os
+import math
+from datetime import date
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -79,6 +81,54 @@ def _convert_csv_row(row):
     return converted
 
 
+def load_validated_seed():
+    """Read the entire seed and reject invalid data before any cloud mutation."""
+    from src.supplychain import validate_records
+
+    fields = {
+        "items": {"item_id", "item_name", "category", "unit_cost_usd"},
+        "customers": {"customer_id", "customer_name", "segment", "region"},
+        "shipments": {"shipment_id", "item_id", "qty", "expected_arrival_date", "status", "as_of_date"},
+        "inventory": {"item_id", "available_qty", "as_of_date"},
+        "orders": {"order_id", "item_id", "customer_id", "qty_needed", "due_date", "priority", "order_status"},
+    }
+    tables = {}
+    for name, (filename, id_field) in SEED_FILES.items():
+        with (DATA_DIR / filename).open(newline="", encoding="utf-8") as source:
+            reader = csv.DictReader(source)
+            if not fields[name].issubset(reader.fieldnames or []):
+                raise ValueError(f"Missing required fields in {filename}")
+            rows = []
+            for raw in reader:
+                if None in raw or any(not isinstance(raw.get(k), str) or not raw[k].strip() for k in fields[name]):
+                    raise ValueError(f"Missing required values in {filename}")
+                row = _convert_csv_row({k: v.strip() if isinstance(v, str) else v for k, v in raw.items()})
+                if "/" in row[id_field]:
+                    raise ValueError(f"Invalid document ID in {filename}")
+                for key in ("as_of_date", "due_date", "expected_arrival_date"):
+                    if key in row:
+                        date.fromisoformat(row[key])
+                rows.append(row)
+        if not rows:
+            raise ValueError(f"Synthetic seed file is empty: {filename}")
+        ids = [row[id_field] for row in rows]
+        if len(ids) != len(set(ids)):
+            raise ValueError(f"Duplicate IDs in {filename}")
+        tables[name] = rows
+    validate_records(tables["shipments"], tables["inventory"], tables["orders"])
+    for row in tables["items"]:
+        if not math.isfinite(row["unit_cost_usd"]) or row["unit_cost_usd"] < 0:
+            raise ValueError("Item cost must be finite and non-negative")
+    item_ids = {row["item_id"] for row in tables["items"]}
+    customer_ids = {row["customer_id"] for row in tables["customers"]}
+    for table in ("shipments", "inventory", "orders"):
+        if any(row["item_id"] not in item_ids for row in tables[table]):
+            raise ValueError(f"Unknown item reference in {table}")
+    if any(row["customer_id"] not in customer_ids for row in tables["orders"]):
+        raise ValueError("Unknown customer reference in orders")
+    return tables
+
+
 def seed_firestore(client=None, replace=False):
     """Upload versioned CSV seed records to Firestore using stable document IDs.
 
@@ -86,6 +136,7 @@ def seed_firestore(client=None, replace=False):
     updated, while other records are left untouched. --replace deletes the
     five demo collections first and should only be used for this demo project.
     """
+    tables = load_validated_seed()
     client = client or get_firestore_client()
     if replace:
         for collection_name in SEED_FILES:
@@ -97,10 +148,7 @@ def seed_firestore(client=None, replace=False):
                 batch.commit()
 
     for collection_name, (filename, id_field) in SEED_FILES.items():
-        with (DATA_DIR / filename).open(newline="", encoding="utf-8") as source:
-            rows = [_convert_csv_row(row) for row in csv.DictReader(source)]
-        if not rows:
-            raise ValueError(f"Synthetic seed file is empty: {filename}")
+        rows = tables[collection_name]
         for start in range(0, len(rows), 400):
             batch = client.batch()
             for row in rows[start:start + 400]:
@@ -131,7 +179,7 @@ def read_table(table, client=None):
         for row in rows:
             item = items.get(row.get("item_id"), {})
             row["item_name"] = item.get("item_name", row.get("item_id", ""))
-        rows.sort(key=lambda row: SEED_FILES[table][1])
+        rows.sort(key=lambda row: row[SEED_FILES[table][1]])
         return rows
 
     customers = {row["customer_id"]: row for row in _collection_rows(client, "customers")}

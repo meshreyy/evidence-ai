@@ -52,7 +52,7 @@ def validate_records(shipments, inventory_rows, orders):
             raise ValueError("Order priority must be 1 or greater")
 
 
-def calculate_at_risk_orders(shipment, inventory_rows, orders):
+def calculate_order_allocation(shipment, inventory_rows, orders):
     """Calculate shortages using supplied records; no file or AI dependency.
 
     Orders due on the shipment's arrival date are included conservatively:
@@ -86,23 +86,28 @@ def calculate_at_risk_orders(shipment, inventory_rows, orders):
         covered = min(available, needed)
         shortfall = needed - covered
         available -= covered
-        if shortfall:
-            result = {
-                "order_id": order["order_id"],
-                "customer": order.get("customer_name", order.get("customer_id", "")),
-                "item": order.get("item_name", item_id),
-                "qty_needed": needed,
-                "qty_covered": covered,
-                "qty_uncovered": shortfall,
-                "due_date": order["due_date"],
-                "shipment_id": shipment_id,
-                "expected_arrival_date": arrival.isoformat(),
-            }
-            if order.get("customer_segment"):
-                result["customer_segment"] = order["customer_segment"]
-            results.append(result)
+        result = {
+            "order_id": order["order_id"],
+            "customer": order.get("customer_name", order.get("customer_id", "")),
+            "item": order.get("item_name", item_id),
+            "qty_needed": needed,
+            "qty_covered": covered,
+            "qty_uncovered": shortfall,
+            "due_date": order["due_date"],
+            "shipment_id": shipment_id,
+            "expected_arrival_date": arrival.isoformat(),
+        }
+        if order.get("customer_segment"):
+            result["customer_segment"] = order["customer_segment"]
+        results.append(result)
 
     return results
+
+
+def calculate_at_risk_orders(shipment, inventory_rows, orders):
+    """Keep the existing risk-only result for callers."""
+    return [row for row in calculate_order_allocation(shipment, inventory_rows, orders)
+            if row["qty_uncovered"] > 0]
 
 
 def find_at_risk_orders(shipment_id):

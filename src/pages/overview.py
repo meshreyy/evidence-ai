@@ -69,6 +69,11 @@ register_rows = [{
     "Units uncovered": row["units_uncovered"],
 } for row in shipments]
 st.dataframe(pd.DataFrame(register_rows), width="stretch", hide_index=True, height=360)
+if shipments:
+    chosen = st.selectbox("Open shipment", [row["shipment_id"] for row in shipments])
+    if st.button("Open shipment analysis"):
+        st.session_state["requested_shipment"] = chosen
+        st.switch_page("pages/shipment_analysis.py")
 st.caption(
     "Data is synthetic and reproducible. The dashboard uses Firebase Firestore for operational records; "
     "the model does not train on this dataset."

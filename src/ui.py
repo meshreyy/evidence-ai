@@ -44,6 +44,8 @@ def get_openai_api_key():
     """Read a key from the server environment or Streamlit secrets, never UI input."""
     import os
 
+    if os.getenv("ENABLE_LIVE_AI", "false").lower() != "true":
+        return None
     key = os.getenv("OPENAI_API_KEY")
     if key:
         return key
